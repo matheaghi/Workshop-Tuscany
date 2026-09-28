@@ -43,10 +43,6 @@ Clean Architecture, .NET 10: `Domain` ← `Application` ← `Infrastructure` ←
 
 **Tests (xUnit).** Domain: pure unit tests. Application: handlers against `TestAppDbContext.Create()` (InMemory). Api: `TronderLeikanApiFactory` (WebApplicationFactory + Postgres Testcontainer, real migrations). Infrastructure: Testcontainers.
 
-## Frontend (`src/frontend`)
+## Frontend
 
-Next.js 16 App Router, React 19, Tailwind 4, better-auth. Read `src/frontend/AGENTS.md` first: this Next.js version has breaking changes — check `node_modules/next/dist/docs/` before writing Next code.
-
-- Route groups: `(public)` (scoreboard, players, tournaments) and `(admin)/admin` (protected by `src/proxy.ts`, which redirects to `/login` without a session).
-- All API calls are server-side `fetch` to `process.env.API_BASE_URL` (set by Aspire) in server components and `"use server"` `actions.ts` files, followed by `revalidatePath`.
-- Auth: better-auth with Zitadel OIDC (`src/lib/auth.ts`). The AppHost auto-provisions the OIDC client and injects `ZITADEL_*` and `BETTER_AUTH_*` env vars. Local login: `zitadel-admin@zitadel.localhost` / `Password1!`.
+`src/frontend` (Next.js) calls the API server-side via `API_BASE_URL`, set by Aspire; `/admin` requires login through Zitadel (`zitadel-admin@zitadel.localhost` / `Password1!`). Details in `src/frontend/AGENTS.md`.
