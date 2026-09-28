@@ -31,10 +31,18 @@ type GameHistoryResponse = {
 
 type PersonHistoryResponse = {
   personId: string;
+  // Antall spill per rolle — arrangør som spiller teller både som deltaker og arrangør
+  roleSummary: {
+    participated: number;
+    organized: number;
+    spectated: number;
+  };
+  // Sortert med eldste turnering først
   tournaments: {
     tournamentId: string;
     name: string;
     slug: string;
+    rank: number;
     games: GameHistoryResponse[];
   }[];
 };
@@ -117,6 +125,119 @@ function formatRoles(roles: GameRole[]): string {
   return roles
     .map((role, i) => (i === 0 ? roleLabels[role] : roleLabels[role].toLowerCase()))
     .join(" og ");
+}
+
+const monthFormat = new Intl.DateTimeFormat("nb-NO", {
+  month: "long",
+  year: "numeric",
+  timeZone: "UTC",
+});
+
+// «a», «a og b», «a, b og c»
+function joinNorwegian(parts: string[]): string {
+  if (parts.length <= 1) return parts.join("");
+  return `${parts.slice(0, -1).join(", ")} og ${parts[parts.length - 1]}`;
+}
+
+// Rollen som tydelig dominerer (størst antall, uten likhet). Ingen profil ved likhet.
+function roleProfile(summary: PersonHistoryResponse["roleSummary"]): string | null {
+  const counts = [
+    { count: summary.participated, label: "først og fremst en spiller" },
+    { count: summary.organized, label: "en ivrig arrangør" },
+    { count: summary.spectated, label: "en trofast tilskuer" },
+  ].sort((a, b) => b.count - a.count);
+  return counts[0].count > counts[1].count ? counts[0].label : null;
+}
+
+// Lager en kort fortelling om personen, én setning per element.
+// Bruker fornavnet i stedet for pronomen, siden vi ikke vet hvilke pronomen personen bruker.
+// games er sortert med nyeste først (se toNewestFirst).
+function buildStory(
+  name: string,
+  history: PersonHistoryResponse,
+  games: HistoryGame[]
+): string[] {
+  if (games.length === 0) {
+    return [
+      `${name} har ikke vært med på noe spill ennå.`,
+      "Neste spill kan bli starten på historien!",
+    ];
+  }
+
+  const story: string[] = [];
+  const { participated, organized, spectated } = history.roleSummary;
+  const tournamentCount = history.tournaments.length;
+  const datedGames = games.filter((g) => g.playedOn !== null);
+  const firstDated = datedGames[datedGames.length - 1];
+
+  // 1. Omfang — eller en velkomst for den som bare har ett spill
+  if (games.length === 1) {
+    const game = games[0];
+    const when = game.playedOn ? ` i ${monthFormat.format(new Date(game.playedOn))}` : "";
+    story.push(
+      `${name} er ny i Leikan – første spill var ${game.name}${when}, og det ga ${game.points.total} poeng.`
+    );
+  } else {
+    const since = firstDated?.playedOn
+      ? ` siden ${monthFormat.format(new Date(firstDated.playedOn))}`
+      : "";
+    const tournaments = tournamentCount === 1 ? "1 turnering" : `${tournamentCount} turneringer`;
+    story.push(`${name} har vært med på ${games.length} spill i ${tournaments}${since}.`);
+  }
+
+  // 2. Roller — alltid med antall, og arrangering nevnes alltid
+  const notOrganized = organized === 0 ? ", men ikke arrangert noen ennå" : "";
+  if (games.length === 1) {
+    const roles = formatRoles(games[0].roles).toLowerCase();
+    story.push(`Der var ${name} ${roles}${organized === 0 ? ", og har ikke arrangert noe spill ennå" : ""}.`);
+  } else {
+    const parts = [
+      participated > 0 ? `deltatt i ${participated}` : null,
+      organized > 0 ? `arrangert ${organized}` : null,
+      spectated > 0 ? `sett på ${spectated}` : null,
+    ].filter((p): p is string => p !== null);
+    const profile = roleProfile(history.roleSummary);
+    story.push(
+      `Av dem har ${name} ${joinNorwegian(parts)}${notOrganized}${profile ? ` – ${profile}` : ""}.`
+    );
+  }
+
+  // 3. Pallen — seire og beste plassering
+  const podium = games.filter((g) => g.placement !== null);
+  const wins = podium.filter((g) => g.placement === 1);
+  if (games.length === 1) {
+    if (podium.length === 1) story.push(`Det endte med ${podium[0].placement}. plass!`);
+  } else if (podium.length === 0) {
+    story.push("Pallen venter fortsatt – men hvert spill er en ny sjanse.");
+  } else {
+    const lead = `${podium.length} av spillene endte på pallen`;
+    if (wins.length === 1) {
+      story.push(`${lead}, med seier i ${wins[0].name} som høydepunktet.`);
+    } else if (wins.length > 1) {
+      story.push(`${lead}, med ${wins.length} seire, sist i ${wins[0].name}.`);
+    } else {
+      const best = Math.min(...podium.map((g) => g.placement!));
+      const bestGame = podium.find((g) => g.placement === best)!;
+      story.push(`${lead}, og beste plassering er ${best}. plass i ${bestGame.name}.`);
+    }
+  }
+
+  // 4. Utvikling — første mot siste turnering, bare med minst to turneringer
+  if (tournamentCount >= 2) {
+    const first = history.tournaments[0];
+    const latest = history.tournaments[tournamentCount - 1];
+    const trend =
+      latest.rank < first.rank
+        ? "pila peker oppover"
+        : latest.rank > first.rank
+          ? "neste turnering kan snu det"
+          : "like stødig som før";
+    story.push(
+      `Fra ${first.rank}. plass i ${first.name} til ${latest.rank}. plass i ${latest.name} – ${trend}.`
+    );
+  }
+
+  return story;
 }
 
 // Én rad i historikken: dato, spill, turnering, rolle, plassering og poeng
@@ -240,7 +361,16 @@ export default async function PlayerProfilePage({
         </h1>
       </div>
 
-      {/* Historikken utelates hvis den ikke kunne hentes */}
+      {/* Oppsummering og historikk utelates hvis historikken ikke kunne hentes */}
+      {history && games && (
+        <section
+          aria-label="Oppsummering"
+          className="mt-6 border border-gray-200 rounded p-4"
+        >
+          <p>{buildStory(person.firstName, history, games).join(" ")}</p>
+        </section>
+      )}
+
       {games && (
         <section aria-labelledby="history-heading" className="mt-8">
           <div className="flex items-center justify-between mb-2">
