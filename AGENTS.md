@@ -39,10 +39,7 @@ Clean Architecture, .NET 10: `Domain` ← `Application` ← `Infrastructure` ←
 
 **Domain events → outbox.** Entities inherit `Domain/Common/Entity` and raise `IDomainEvent`s. `AppDbContext.SaveChangesAsync` writes each event to both `OutboxMessages` and the append-only `EventStore` in the same transaction. Every event must have a `Guid` property ending in `Id` (used as stream id), and its namespace must be `Domain.<Aggregate>.Events`. No outbox processor exists yet; `Application/*/EventHandlers` are placeholders.
 
-**EF Core.** Entity configs in `Infrastructure/Persistence/Configurations`. `Game` stores person lists (`_participants`, `_organizers`, `_firstPlace`, ...) as private backing fields; `TournamentPointRules` is an owned type. Images (`PersonImage`, `GameBanner`) are separate tables keyed by the owner's id. If you change the model, also update `tests/TronderLeikan.Application.Tests/TestAppDbContext.cs`, which mirrors this config for the InMemory provider.
-
-**Tests (xUnit).** Domain: pure unit tests. Application: handlers against `TestAppDbContext.Create()` (InMemory). Api: `TronderLeikanApiFactory` (WebApplicationFactory + Postgres Testcontainer, real migrations). Infrastructure: Testcontainers.
-
+**EF Core.** If you change the model, also update `tests/TronderLeikan.Application.Tests/TestAppDbContext.cs`, which mirrors the Infrastructure config for the InMemory provider.
 ## Frontend
 
 `src/frontend` (Next.js) calls the API server-side via `API_BASE_URL`, set by Aspire; `/admin` requires login through Zitadel (`zitadel-admin@zitadel.localhost` / `Password1!`). Details in `src/frontend/AGENTS.md`.
