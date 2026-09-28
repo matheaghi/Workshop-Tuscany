@@ -154,4 +154,87 @@ public class TournamentPointRulesTests
         points.Should().Be(new GamePoints(Participation: 2, Placement: 1, Organizing: 0, Spectating: 0));
         points.Total.Should().Be(3);
     }
+
+    [Fact]
+    public void PointLinesFor_DeltakerPåAndreplass_FårPostForDeltakelseOgAndreplass()
+    {
+        var person = Guid.NewGuid();
+        var game = Game.Create("Kubb", Guid.NewGuid());
+        game.AddParticipant(person);
+        game.Complete([], [person], []);
+
+        var lines = TournamentPointRules.Default().PointLinesFor(game, person);
+
+        lines.Should().Equal(
+            new PointLine(PointReason.Participation, 3),
+            new PointLine(PointReason.SecondPlace, 2));
+    }
+
+    [Fact]
+    public void PointLinesFor_ArrangørUtenDeltakelse_FårBareArrangørpost()
+    {
+        var arrangør = Guid.NewGuid();
+        var game = Game.Create("Boccia", Guid.NewGuid());
+        game.AddOrganizer(arrangør, withParticipation: false);
+
+        var lines = TournamentPointRules.Default().PointLinesFor(game, arrangør);
+
+        lines.Should().Equal(new PointLine(PointReason.OrganizedWithoutParticipation, 3));
+    }
+
+    [Fact]
+    public void PointLinesFor_ArrangørMedDeltakelseSomOgsåErDeltakerPåFørsteplass_FårDeltakerpostBareÉnGang()
+    {
+        var arrangør = Guid.NewGuid();
+        var game = Game.Create("Vinquiz", Guid.NewGuid());
+        game.AddOrganizer(arrangør, withParticipation: true);
+        game.AddParticipant(arrangør);
+        game.Complete([arrangør], [], []);
+
+        var lines = TournamentPointRules.Default().PointLinesFor(game, arrangør);
+
+        lines.Should().Equal(
+            new PointLine(PointReason.Participation, 3),
+            new PointLine(PointReason.FirstPlace, 3),
+            new PointLine(PointReason.OrganizedWithParticipation, 1));
+    }
+
+    [Fact]
+    public void PointLinesFor_Tilskuer_FårTilskuerpost()
+    {
+        var tilskuer = Guid.NewGuid();
+        var game = Game.Create("Pizzabaking", Guid.NewGuid());
+        game.AddSpectator(tilskuer);
+
+        var lines = TournamentPointRules.Default().PointLinesFor(game, tilskuer);
+
+        lines.Should().Equal(new PointLine(PointReason.Spectator, 1));
+    }
+
+    [Fact]
+    public void PointLinesFor_RegelGirNullPoeng_PostenVisesLikevel()
+    {
+        var tilskuer = Guid.NewGuid();
+        var game = Game.Create("Pizzabaking", Guid.NewGuid());
+        game.AddSpectator(tilskuer);
+        var rules = TournamentPointRules.Custom(
+            participation: 3, firstPlace: 3, secondPlace: 2, thirdPlace: 1,
+            organizedWithParticipation: 1, organizedWithoutParticipation: 3, spectator: 0);
+
+        var lines = rules.PointLinesFor(game, tilskuer);
+
+        lines.Should().Equal(new PointLine(PointReason.Spectator, 0));
+    }
+
+    [Fact]
+    public void PointLinesFor_PersonSomIkkeVarMed_FårIngenPoster()
+    {
+        var game = Game.Create("Kubb", Guid.NewGuid());
+        game.AddParticipant(Guid.NewGuid());
+        game.Complete([], [], []);
+
+        var lines = TournamentPointRules.Default().PointLinesFor(game, Guid.NewGuid());
+
+        lines.Should().BeEmpty();
+    }
 }

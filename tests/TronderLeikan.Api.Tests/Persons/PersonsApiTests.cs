@@ -69,6 +69,34 @@ public class PersonsApiTests(TronderLeikanApiFactory factory)
     }
 
     [Fact]
+    public async Task GET_historikk_forklarer_poengene_med_poster_per_spill_og_sammenlagt()
+    {
+        var personId = await (await _client.PostAsJsonAsync("/api/v1/persons",
+            new { firstName = "Poeng", lastName = "Forklaresen" })).Content.ReadFromJsonAsync<Guid>();
+        var tournamentId = await (await _client.PostAsJsonAsync("/api/v1/tournaments",
+            new { name = "Poengtest", slug = $"p-{Guid.NewGuid():N}" })).Content.ReadFromJsonAsync<Guid>();
+        var gameId = await (await _client.PostAsJsonAsync("/api/v1/games",
+            new { tournamentId, name = "Kubb", gameType = 0 })).Content.ReadFromJsonAsync<Guid>();
+        await _client.PostAsJsonAsync($"/api/v1/games/{gameId}/participants", new { gameId, personId });
+        await _client.PostAsJsonAsync($"/api/v1/games/{gameId}/complete",
+            new { gameId, firstPlace = new[] { personId }, secondPlace = Array.Empty<Guid>(), thirdPlace = Array.Empty<Guid>() });
+
+        var body = await (await _client.GetAsync($"/api/v1/persons/{personId}/history")).Content.ReadFromJsonAsync<JsonElement>();
+
+        var turnering = body.GetProperty("tournaments")[0];
+        var poster = turnering.GetProperty("games")[0].GetProperty("points").GetProperty("lines");
+        poster.GetArrayLength().Should().Be(2);
+        poster[0].GetProperty("reason").GetString().Should().Be("Participation");
+        poster[0].GetProperty("points").GetInt32().Should().Be(3);
+        poster[1].GetProperty("reason").GetString().Should().Be("FirstPlace");
+        poster[1].GetProperty("points").GetInt32().Should().Be(3);
+        var sammenlagt = turnering.GetProperty("pointsSummary");
+        sammenlagt[1].GetProperty("reason").GetString().Should().Be("FirstPlace");
+        sammenlagt[1].GetProperty("count").GetInt32().Should().Be(1);
+        sammenlagt[1].GetProperty("points").GetInt32().Should().Be(3);
+    }
+
+    [Fact]
     public async Task Opprett_og_hent_person_happy_path()
     {
         var createResponse = await _client.PostAsJsonAsync("/api/v1/persons", new

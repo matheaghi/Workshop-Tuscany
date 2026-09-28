@@ -100,7 +100,10 @@ function ScoreboardRow({ entry }: { entry: ScoreboardEntryResponse }) {
     <tr className="border-b border-gray-200">
       <td className="py-2 pr-4">{entry.rank}</td>
       <td className="py-2 pr-4">
-        {entry.firstName} {entry.lastName}
+        {/* Spillersiden forklarer hvor poengene kommer fra */}
+        <Link href={`/players/${entry.personId}`} className="underline">
+          {entry.firstName} {entry.lastName}
+        </Link>
       </td>
       <td className="py-2 text-right">{entry.totalPoints}</td>
     </tr>

@@ -1,3 +1,5 @@
+using TronderLeikan.Domain.Tournaments;
+
 namespace TronderLeikan.Application.Persons.Responses;
 
 // En persons historikk: alle ferdige spill de har vært med i, gruppert per turnering og sortert etter dato
@@ -19,7 +21,11 @@ public record TournamentHistoryResponse(
     DateOnly? LastPlayedOn,
     int TotalPoints,
     int Rank,
+    IReadOnlyList<PointSummaryResponse> PointsSummary,
     IReadOnlyList<GameHistoryResponse> Games);
+
+// Sammenlagt per grunn i turneringen: hvor mange ganger personen fikk posten og hvor mange poeng det ga
+public record PointSummaryResponse(PointReason Reason, int Count, int Points);
 
 public record GameHistoryResponse(
     Guid GameId,
@@ -29,7 +35,16 @@ public record GameHistoryResponse(
     int? Placement,
     GamePointsResponse Points);
 
-public record GamePointsResponse(int Participation, int Placement, int Organizing, int Spectating, int Total);
+public record GamePointsResponse(
+    int Participation,
+    int Placement,
+    int Organizing,
+    int Spectating,
+    int Total,
+    IReadOnlyList<PointLineResponse> Lines);
+
+// Én post i forklaringen av poengene i et spill
+public record PointLineResponse(PointReason Reason, int Points);
 
 public enum GameRole
 {

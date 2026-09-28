@@ -3,6 +3,21 @@
 // Datamodell for spillerhistorikk — tilsvarer API-respons fra /api/v1/persons/:id/history
 export type GameRole = "Participant" | "Organizer" | "Spectator";
 
+// Hva en poengpost ble gitt for — samme rekkefølge som API-et sender postene i
+export type PointReason =
+  | "Participation"
+  | "FirstPlace"
+  | "SecondPlace"
+  | "ThirdPlace"
+  | "OrganizedWithParticipation"
+  | "OrganizedWithoutParticipation"
+  | "Spectator";
+
+export type PointLine = { reason: PointReason; points: number };
+
+// Sammenlagt per grunn i én turnering
+export type PointSummary = { reason: PointReason; count: number; points: number };
+
 export type GameHistoryResponse = {
   gameId: string;
   name: string;
@@ -15,6 +30,7 @@ export type GameHistoryResponse = {
     organizing: number;
     spectating: number;
     total: number;
+    lines: PointLine[];
   };
 };
 
@@ -32,6 +48,8 @@ export type PersonHistoryResponse = {
     name: string;
     slug: string;
     rank: number;
+    totalPoints: number;
+    pointsSummary: PointSummary[];
     games: GameHistoryResponse[];
   }[];
 };
@@ -82,4 +100,20 @@ export function formatRoles(roles: GameRole[]): string {
   return roles
     .map((role, i) => (i === 0 ? roleLabels[role] : roleLabels[role].toLowerCase()))
     .join(" og ");
+}
+
+// Forklarende tekst per poenggrunn, skrevet for en som aldri har vært med før
+export const reasonLabels: Record<PointReason, string> = {
+  Participation: "Deltok",
+  FirstPlace: "1. plass",
+  SecondPlace: "2. plass",
+  ThirdPlace: "3. plass",
+  OrganizedWithParticipation: "Arrangerte og spilte",
+  OrganizedWithoutParticipation: "Arrangerte uten å spille",
+  Spectator: "Så på",
+};
+
+// «Deltok 6 ganger» — antallet utelates når posten bare gjelder én gang
+export function formatSummaryReason({ reason, count }: PointSummary): string {
+  return count === 1 ? reasonLabels[reason] : `${reasonLabels[reason]} ${count} ganger`;
 }

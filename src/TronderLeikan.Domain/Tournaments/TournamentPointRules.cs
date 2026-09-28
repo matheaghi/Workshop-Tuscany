@@ -39,23 +39,43 @@ public sealed class TournamentPointRules
     // Sjekker ikke om spillet er ferdig — det er kallerens ansvar å bare ta med ferdige spill.
     public GamePoints PointsFor(Game game, Guid personId)
     {
+        var lines = PointLinesFor(game, personId);
+        int Sum(params PointReason[] reasons) => lines.Where(l => reasons.Contains(l.Reason)).Sum(l => l.Points);
+
+        return new GamePoints(
+            Participation: Sum(PointReason.Participation),
+            Placement: Sum(PointReason.FirstPlace, PointReason.SecondPlace, PointReason.ThirdPlace),
+            Organizing: Sum(PointReason.OrganizedWithParticipation, PointReason.OrganizedWithoutParticipation),
+            Spectating: Sum(PointReason.Spectator));
+    }
+
+    // Forklarer poengene en person får i et spill, én post per grunn.
+    // En post tas med når rollen gjelder, også om regelen gir 0 poeng, så forklaringen alltid viser hva som telte.
+    public IReadOnlyList<PointLine> PointLinesFor(Game game, Guid personId)
+    {
+        var lines = new List<PointLine>();
         var isOrganizer = game.Organizers.Contains(personId);
 
         // Arrangør som spiller får deltakerpoeng — men bare én gang, selv om personen også er lagt til som deltaker
-        var isPlaying = game.Participants.Contains(personId) || (isOrganizer && game.IsOrganizersParticipating);
-        var participation = isPlaying ? Participation : 0;
+        if (game.Participants.Contains(personId) || (isOrganizer && game.IsOrganizersParticipating))
+            lines.Add(new PointLine(PointReason.Participation, Participation));
 
         // Plasspoeng kommer i tillegg til deltakerpoeng
-        var placement =
-            (game.FirstPlace.Contains(personId) ? FirstPlace : 0) +
-            (game.SecondPlace.Contains(personId) ? SecondPlace : 0) +
-            (game.ThirdPlace.Contains(personId) ? ThirdPlace : 0);
+        if (game.FirstPlace.Contains(personId))
+            lines.Add(new PointLine(PointReason.FirstPlace, FirstPlace));
+        if (game.SecondPlace.Contains(personId))
+            lines.Add(new PointLine(PointReason.SecondPlace, SecondPlace));
+        if (game.ThirdPlace.Contains(personId))
+            lines.Add(new PointLine(PointReason.ThirdPlace, ThirdPlace));
 
-        var organizing = !isOrganizer ? 0
-            : game.IsOrganizersParticipating ? OrganizedWithParticipation : OrganizedWithoutParticipation;
+        if (isOrganizer)
+            lines.Add(game.IsOrganizersParticipating
+                ? new PointLine(PointReason.OrganizedWithParticipation, OrganizedWithParticipation)
+                : new PointLine(PointReason.OrganizedWithoutParticipation, OrganizedWithoutParticipation));
 
-        var spectating = game.Spectators.Contains(personId) ? Spectator : 0;
+        if (game.Spectators.Contains(personId))
+            lines.Add(new PointLine(PointReason.Spectator, Spectator));
 
-        return new GamePoints(participation, placement, organizing, spectating);
+        return lines;
     }
 }

@@ -40,3 +40,4 @@ Tanken bak er at det skal lønne seg å møte opp, at det skal lønne seg å vin
 Scoreboardet for en turnering summerer poengene fra alle ferdige spill og rangerer personene etter totalsum.
 Personer med lik poengsum deler plassering, og neste person hopper tilsvarende ned.
 Hver person har en historikk som viser hvilke spill de har vært med i, hvilken plassering de fikk og om de arrangerte.
+Historikken forklarer poengene: hvert spill viser hvilke poster summen består av, og hver turnering viser postene sammenlagt.

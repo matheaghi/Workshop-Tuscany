@@ -1,11 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import Link from "next/link";
-import { formatPlayedOn, formatRoles, type HistoryGame } from "./history";
+import {
+  formatPlayedOn,
+  formatRoles,
+  formatSummaryReason,
+  reasonLabels,
+  type HistoryGame,
+  type PointSummary,
+} from "./history";
 import { HistoryChart, type ChartPoint } from "./HistoryChart";
 
-type TournamentOption = { slug: string; name: string; rank: number };
+type TournamentOption = {
+  slug: string;
+  name: string;
+  rank: number;
+  totalPoints: number;
+  pointsSummary: PointSummary[];
+};
 
 const shortDate = new Intl.DateTimeFormat("nb-NO", {
   day: "numeric",
@@ -44,8 +57,13 @@ function rankPerTournament(tournaments: TournamentOption[]): ChartPoint[] {
   }));
 }
 
-// Én rad i historikken: dato, spill, turnering, rolle, plassering og poeng
+// Én rad i historikken: dato, spill, turnering, rolle, plassering og poeng.
+// «?»-knappen viser hvordan poengsummen er satt sammen.
 function HistoryRow({ game }: { game: HistoryGame }) {
+  const [open, setOpen] = useState(false);
+  const explanationId = useId();
+  const { total, lines } = game.points;
+
   return (
     <li className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-gray-200 py-3">
       <div className="min-w-0">
@@ -71,9 +89,63 @@ function HistoryRow({ game }: { game: HistoryGame }) {
         {game.placement !== null && (
           <div className="text-sm font-medium">{game.placement}. plass</div>
         )}
-        <div className="text-lg font-semibold">{game.points.total} poeng</div>
+        <div className="flex items-center justify-end gap-2">
+          <span className="text-lg font-semibold">{total} poeng</span>
+          <button
+            type="button"
+            onClick={() => setOpen((o) => !o)}
+            aria-expanded={open}
+            aria-controls={explanationId}
+            aria-label={`Hvorfor ${total} poeng?`}
+            className="w-6 h-6 rounded-full border border-gray-400 text-sm font-semibold leading-none text-gray-700 hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+          >
+            ?
+          </button>
+        </div>
       </div>
+
+      {open && (
+        <div id={explanationId} className="basis-full rounded bg-gray-50 px-3 py-2 text-sm">
+          <p>
+            {lines.length === 0
+              ? "Ingen poeng i dette spillet."
+              : `${lines.map((l) => `${reasonLabels[l.reason]} ${l.points}`).join(" + ")} = ${total} poeng`}
+          </p>
+          <Link href={`/tournaments/${game.tournamentSlug}`} className="underline text-gray-600">
+            Se poengreglene i {game.tournamentName}
+          </Link>
+        </div>
+      )}
     </li>
+  );
+}
+
+// Sammenlagt for én turnering: hver grunn med antall og poeng, og totalen som gir plasseringen
+function TournamentSummary({ tournament }: { tournament: TournamentOption }) {
+  return (
+    <section
+      aria-label={`Poengene i ${tournament.name}`}
+      className="mb-4 border border-gray-200 rounded p-4"
+    >
+      <h3 className="font-semibold mb-2">Slik ble poengene i {tournament.name}</h3>
+      <dl className="text-sm">
+        {tournament.pointsSummary.map((s) => (
+          <div key={s.reason} className="flex justify-between gap-4 py-0.5">
+            <dt>{formatSummaryReason(s)}</dt>
+            <dd>{s.points} poeng</dd>
+          </div>
+        ))}
+        <div className="flex justify-between gap-4 border-t border-gray-200 mt-1 pt-1 font-semibold">
+          <dt>Totalt</dt>
+          <dd>
+            {tournament.totalPoints} poeng · {tournament.rank}. plass
+          </dd>
+        </div>
+      </dl>
+      <Link href={`/tournaments/${tournament.slug}`} className="text-sm underline text-gray-600">
+        Se poengreglene
+      </Link>
+    </section>
   );
 }
 
@@ -92,8 +164,12 @@ export function GameHistory({
   const shown =
     selected === "" ? games : games.filter((g) => g.tournamentSlug === selected);
 
+  // Med bare én turnering er den alltid «valgt», siden nedtrekkslisten da er skjult
+  const selectedTournament =
+    tournaments.length === 1 ? tournaments[0] : tournaments.find((t) => t.slug === selected);
+
   // Diagrammet trenger minst to punkter for å vise en utvikling
-  const selectedName = tournaments.find((t) => t.slug === selected)?.name;
+  const selectedName = selectedTournament?.name;
   const chart =
     selected === ""
       ? tournaments.length > 1 && {
@@ -139,6 +215,8 @@ export function GameHistory({
           )}
         </div>
       </div>
+
+      {selectedTournament && <TournamentSummary tournament={selectedTournament} />}
 
       {chart && (
         <HistoryChart

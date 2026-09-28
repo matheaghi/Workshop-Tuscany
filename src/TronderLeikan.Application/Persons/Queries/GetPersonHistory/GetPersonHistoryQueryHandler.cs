@@ -61,11 +61,19 @@ public sealed class GetPersonHistoryQueryHandler(IAppDbContext db)
             .Select(g => ToGameHistory(g, tournament.PointRules, personId))
             .ToList();
 
+        // Samler postene fra alle spillene per grunn, i samme rekkefølge som postene vises i hvert spill
+        var pointsSummary = personGames
+            .SelectMany(g => g.Points.Lines)
+            .GroupBy(l => l.Reason)
+            .OrderBy(g => g.Key)
+            .Select(g => new PointSummaryResponse(g.Key, g.Count(), g.Sum(l => l.Points)))
+            .ToList();
+
         return new TournamentHistoryResponse(
             tournament.Id, tournament.Name, tournament.Slug,
             dates.Count > 0 ? dates.Min() : null,
             dates.Count > 0 ? dates.Max() : null,
-            entry.TotalPoints, entry.Rank, personGames);
+            entry.TotalPoints, entry.Rank, pointsSummary, personGames);
     }
 
     private static GameHistoryResponse ToGameHistory(Game game, TournamentPointRules rules, Guid personId)
@@ -87,10 +95,13 @@ public sealed class GetPersonHistoryQueryHandler(IAppDbContext db)
             game.ThirdPlace.Contains(personId) ? 3 : null;
 
         var points = rules.PointsFor(game, personId);
+        var lines = rules.PointLinesFor(game, personId)
+            .Select(l => new PointLineResponse(l.Reason, l.Points))
+            .ToList();
 
         return new GameHistoryResponse(
             game.Id, game.Name, game.PlayedOn, roles, placement,
-            new GamePointsResponse(points.Participation, points.Placement, points.Organizing, points.Spectating, points.Total));
+            new GamePointsResponse(points.Participation, points.Placement, points.Organizing, points.Spectating, points.Total, lines));
     }
 
     // Samme utvalg som scoreboardet: personen står i minst én av spillets lister

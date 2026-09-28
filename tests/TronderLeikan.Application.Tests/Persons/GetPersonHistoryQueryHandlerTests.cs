@@ -68,7 +68,14 @@ public sealed class GetPersonHistoryQueryHandlerTests
         Assert.Equal(new DateOnly(2026, 6, 10), spill.PlayedOn);
         Assert.Equal([GameRole.Participant], spill.Roles);
         Assert.Equal(1, spill.Placement);
-        Assert.Equal(new GamePointsResponse(Participation: 3, Placement: 3, Organizing: 0, Spectating: 0, Total: 6), spill.Points);
+        Assert.Equal(3, spill.Points.Participation);
+        Assert.Equal(3, spill.Points.Placement);
+        Assert.Equal(0, spill.Points.Organizing);
+        Assert.Equal(0, spill.Points.Spectating);
+        Assert.Equal(6, spill.Points.Total);
+        Assert.Equal(
+            [new PointLineResponse(PointReason.Participation, 3), new PointLineResponse(PointReason.FirstPlace, 3)],
+            spill.Points.Lines);
     }
 
     [Fact]
@@ -194,5 +201,41 @@ public sealed class GetPersonHistoryQueryHandlerTests
         Assert.Equal(new DateOnly(2026, 1, 16), turneringer[0].FirstPlayedOn);
         Assert.Equal(new DateOnly(2026, 2, 13), turneringer[0].LastPlayedOn);
         Assert.Null(turneringer[2].FirstPlayedOn);
+    }
+
+    [Fact]
+    public async Task GetPersonHistory_OppsummererPoengPerGrunnITurneringen()
+    {
+        await using var db = TestAppDbContext.Create();
+        var kari = Person.Create("Kari", "Nordmann");
+        var t = Tournament.Create("Lagtur", "lagtur");
+        var boccia = Spill(t, "Boccia", null);
+        boccia.AddParticipant(kari.Id);
+        boccia.Complete([], [kari.Id], []);                // deltok 3 + 2. plass 2
+        var dart = Spill(t, "Dart", null);
+        dart.AddParticipant(kari.Id);
+        dart.Complete([], [], [kari.Id]);                  // deltok 3 + 3. plass 1
+        var pizza = Spill(t, "Pizzabaking", null);
+        pizza.AddOrganizer(kari.Id, withParticipation: false);
+        pizza.Complete([], [], []);                        // arrangerte uten å spille 3
+        var kubb = Spill(t, "Kubb", null);
+        kubb.AddSpectator(kari.Id);
+        kubb.Complete([], [], []);                         // så på 1
+        db.AddRange(kari, t, boccia, dart, pizza, kubb);
+        await db.SaveChangesAsync();
+
+        var turnering = Assert.Single((await Historikk(db, kari.Id)).Tournaments);
+
+        Assert.Equal(
+            [
+                new PointSummaryResponse(PointReason.Participation, Count: 2, Points: 6),
+                new PointSummaryResponse(PointReason.SecondPlace, Count: 1, Points: 2),
+                new PointSummaryResponse(PointReason.ThirdPlace, Count: 1, Points: 1),
+                new PointSummaryResponse(PointReason.OrganizedWithoutParticipation, Count: 1, Points: 3),
+                new PointSummaryResponse(PointReason.Spectator, Count: 1, Points: 1),
+            ],
+            turnering.PointsSummary);
+        Assert.Equal(13, turnering.TotalPoints);
+        Assert.Equal(turnering.TotalPoints, turnering.PointsSummary.Sum(s => s.Points));
     }
 }

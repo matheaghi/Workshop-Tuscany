@@ -22,22 +22,25 @@ Done when you have listed, for yourself, every domain rule that bears on the tas
 
 Enter plan mode. Interview the user relentlessly, **one question at a time**, each with your recommended answer. Look facts up in the code yourself; put only decisions to the user. Raise every rule-vs-code disagreement from step 2 as a question.
 
-Done when every decision the task needs is settled and the user approves the plan in `ExitPlanMode`. The plan names: the scope, the behaviour to change, the tests that prove it, and what is explicitly left out.
+Done when every decision the task needs is settled and the user approves the plan in `ExitPlanMode`. The plan names: the scope, the behaviour to change, the tests that prove it (each marked as a red test or a contract test, see step 4), and what is explicitly left out.
 
-## 4. Red
+## 4. Red → green, slice by slice
 
-Write the tests from the plan (use the `tdd` skill), at the lowest layer that can express the behaviour: Domain before Application before Api. Run them.
+First run `aspire ps`. If an AppHost is running, note that, then run `aspire stop`, so the tests build and run against a free machine.
 
-Done when each new test fails, and fails for the reason the plan predicts: show the failure output.
+Then work in vertical slices with the `tdd` skill, one layer per slice, from the lowest layer that can express the behaviour upward: Domain, then Application, then Api. For each slice:
 
-## 5. Green
+1. Write the slice's tests from the plan and run them. Show the failure output: each test is **red**, for the reason the plan predicts.
+2. Change the code until they pass. Stay inside the plan's scope. If the change alters a domain rule, update `docs/TRONDER_LEIKAN.md` to match.
 
-Change the code until the new tests pass. Stay inside the plan's scope. If the change alters a domain rule, update `docs/TRONDER_LEIKAN.md` to match.
+A **contract test** is the one exception to red first. It sits on a layer the plan leaves unchanged, such as an Api test that pins JSON field names and enum strings produced by a lower layer. It has no code of its own to drive, so write it after the slice below goes green, and show it passing on its first run. If it fails, the contract is broken: treat that as a red test and fix the code.
 
-Done when the new tests pass.
+Done when every slice's tests pass, and each one was shown red first or is a contract test named as such in the plan.
 
-## 6. Full run
+## 5. Full run
 
 Run `dotnet test` (Api and Infrastructure tests need Docker). If the frontend changed, run `npm run lint` and `npm run build` in `src/frontend`.
 
-Done when everything is green. Report to the user: what changed (file references), the before/after test result, and anything left open. Leave committing to the user.
+Then, if step 4 stopped an AppHost, restart it with `aspire start` from the main clone.
+
+Done when everything is green and any AppHost stopped in step 4 is running again. Report to the user: what changed (file references), the before/after test result, and anything left open. Leave committing to the user.
