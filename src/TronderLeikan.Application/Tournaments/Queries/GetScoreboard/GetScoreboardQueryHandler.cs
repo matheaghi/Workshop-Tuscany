@@ -3,6 +3,7 @@ using TronderLeikan.Application.Common.Errors;
 using TronderLeikan.Application.Common.Interfaces;
 using TronderLeikan.Application.Common.Results;
 using TronderLeikan.Application.Tournaments.Responses;
+using TronderLeikan.Domain.Tournaments;
 
 namespace TronderLeikan.Application.Tournaments.Queries.GetScoreboard;
 
@@ -14,8 +15,6 @@ public sealed class GetScoreboardQueryHandler(IAppDbContext db)
         var tournament = await db.Tournaments.FindAsync([query.TournamentId], ct);
         if (tournament is null)
             return TournamentErrors.NotFound;
-
-        var rules = tournament.PointRules;
 
         // Hent alle fullførte spill i turneringen
         var games = await db.Games
@@ -29,37 +28,14 @@ public sealed class GetScoreboardQueryHandler(IAppDbContext db)
             .Where(p => allPersonIds.Contains(p.Id))
             .ToDictionaryAsync(p => p.Id, ct);
 
-        // Akkumuler poeng per person — poengreglene ligger i TournamentPointRules.PointsFor
-        var points = new Dictionary<Guid, int>();
-
-        foreach (var game in games)
-        {
-            var personIdsInGame = game.Participants
-                .Concat(game.Organizers)
-                .Concat(game.Spectators)
-                .Concat(game.FirstPlace)
-                .Concat(game.SecondPlace)
-                .Concat(game.ThirdPlace)
-                .Distinct();
-
-            foreach (var personId in personIdsInGame)
-                points[personId] = points.GetValueOrDefault(personId) + rules.PointsFor(game, personId).Total;
-        }
-
-        // Sorter synkende, beregn rank med ties
-        var sorted = points.OrderByDescending(kv => kv.Value).ToList();
-        var entries = new List<ScoreboardEntryResponse>();
-        var rank = 1;
-        for (var i = 0; i < sorted.Count; i++)
-        {
-            if (i > 0 && sorted[i].Value < sorted[i - 1].Value)
-                rank = i + 1;
-            var personId = sorted[i].Key;
-            if (!persons.TryGetValue(personId, out var person))
-                continue;
-            entries.Add(new ScoreboardEntryResponse(personId, person.FirstName, person.LastName, sorted[i].Value, rank));
-        }
-
-        return entries.ToArray();
+        // Poeng og rangering beregnes i domenet — samme beregning som personhistorikken bruker
+        return Scoreboard.Calculate(games, tournament.PointRules)
+            .Where(e => persons.ContainsKey(e.PersonId))
+            .Select(e =>
+            {
+                var person = persons[e.PersonId];
+                return new ScoreboardEntryResponse(e.PersonId, person.FirstName, person.LastName, e.TotalPoints, e.Rank);
+            })
+            .ToArray();
     }
 }

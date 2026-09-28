@@ -7,6 +7,7 @@ using TronderLeikan.Application.Persons.Commands.DeletePersonImage;
 using TronderLeikan.Application.Persons.Commands.UpdatePerson;
 using TronderLeikan.Application.Persons.Commands.UploadPersonImage;
 using TronderLeikan.Application.Persons.Queries.GetPersonById;
+using TronderLeikan.Application.Persons.Queries.GetPersonHistory;
 using TronderLeikan.Application.Persons.Queries.GetPersons;
 using TronderLeikan.Application.Persons.Responses;
 
@@ -22,6 +23,11 @@ public sealed class PersonsController(ISender sender) : ApiControllerBase
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<PersonDetailResponse>> GetById(Guid id, CancellationToken ct) =>
         (await sender.Query(new GetPersonByIdQuery(id), ct)).Match(Ok, Problem);
+
+    // Alle ferdige spill personen har vært med i, gruppert per turnering med poeng og plassering
+    [HttpGet("{id:guid}/history")]
+    public async Task<ActionResult<PersonHistoryResponse>> GetHistory(Guid id, CancellationToken ct) =>
+        (await sender.Query(new GetPersonHistoryQuery(id), ct)).Match(Ok, Problem);
 
     [HttpPost]
     public async Task<ActionResult<Guid>> Create(CreatePersonCommand command, CancellationToken ct)

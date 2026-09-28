@@ -32,6 +32,43 @@ public class PersonsApiTests(TronderLeikanApiFactory factory)
     }
 
     [Fact]
+    public async Task GET_historikk_for_person_som_ikke_finnes_returnerer_404()
+    {
+        var response = await _client.GetAsync($"/api/v1/persons/{Guid.NewGuid()}/history");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        body.GetProperty("title").GetString().Should().Be("Person.NotFound");
+    }
+
+    [Fact]
+    public async Task GET_historikk_viser_ferdig_spill_med_poeng_og_rolle()
+    {
+        var personId = await (await _client.PostAsJsonAsync("/api/v1/persons",
+            new { firstName = "Historie", lastName = "Testesen" })).Content.ReadFromJsonAsync<Guid>();
+        var tournamentId = await (await _client.PostAsJsonAsync("/api/v1/tournaments",
+            new { name = "Historikktest", slug = $"h-{Guid.NewGuid():N}" })).Content.ReadFromJsonAsync<Guid>();
+        var gameId = await (await _client.PostAsJsonAsync("/api/v1/games",
+            new { tournamentId, name = "Kubb", gameType = 0, playedOn = "2026-06-12" })).Content.ReadFromJsonAsync<Guid>();
+        await _client.PostAsJsonAsync($"/api/v1/games/{gameId}/participants", new { gameId, personId });
+        await _client.PostAsJsonAsync($"/api/v1/games/{gameId}/complete",
+            new { gameId, firstPlace = new[] { personId }, secondPlace = Array.Empty<Guid>(), thirdPlace = Array.Empty<Guid>() });
+
+        var response = await _client.GetAsync($"/api/v1/persons/{personId}/history");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        body.GetProperty("roleSummary").GetProperty("participated").GetInt32().Should().Be(1);
+        var turnering = body.GetProperty("tournaments")[0];
+        turnering.GetProperty("rank").GetInt32().Should().Be(1);
+        var spill = turnering.GetProperty("games")[0];
+        spill.GetProperty("playedOn").GetString().Should().Be("2026-06-12");
+        spill.GetProperty("roles")[0].GetString().Should().Be("Participant");
+        spill.GetProperty("placement").GetInt32().Should().Be(1);
+        spill.GetProperty("points").GetProperty("total").GetInt32().Should().Be(6);
+    }
+
+    [Fact]
     public async Task Opprett_og_hent_person_happy_path()
     {
         var createResponse = await _client.PostAsJsonAsync("/api/v1/persons", new
