@@ -13,7 +13,7 @@ public sealed class GetGameByIdQueryHandler(IAppDbContext db)
         var game = await db.Games.FindAsync([query.GameId], ct);
         if (game is null) return GameErrors.NotFound;
         return new GameDetailResponse(
-            game.Id, game.TournamentId, game.Name, game.Description,
+            game.Id, game.TournamentId, game.Name, game.Description, game.PlayedOn,
             game.IsDone, game.GameType, game.HasBanner, game.IsOrganizersParticipating,
             game.Participants, game.Organizers, game.Spectators,
             game.FirstPlace, game.SecondPlace, game.ThirdPlace);

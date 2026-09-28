@@ -1,3 +1,5 @@
+using TronderLeikan.Domain.Games;
+
 namespace TronderLeikan.Domain.Tournaments;
 
 public sealed class TournamentPointRules
@@ -32,4 +34,29 @@ public sealed class TournamentPointRules
             OrganizedWithoutParticipation = organizedWithoutParticipation,
             Spectator = spectator
         };
+
+    // Beregner poengene en person får i et spill etter disse reglene.
+    // Sjekker ikke om spillet er ferdig — det er kallerens ansvar å bare ta med ferdige spill.
+    public GamePoints PointsFor(Game game, Guid personId)
+    {
+        var isOrganizer = game.Organizers.Contains(personId);
+
+        // Arrangør som spiller får deltakerpoeng via arrangørrollen, i tillegg til eventuell deltakerrolle
+        var participation =
+            (game.Participants.Contains(personId) ? Participation : 0) +
+            (isOrganizer && game.IsOrganizersParticipating ? Participation : 0);
+
+        // Plasspoeng kommer i tillegg til deltakerpoeng
+        var placement =
+            (game.FirstPlace.Contains(personId) ? FirstPlace : 0) +
+            (game.SecondPlace.Contains(personId) ? SecondPlace : 0) +
+            (game.ThirdPlace.Contains(personId) ? ThirdPlace : 0);
+
+        var organizing = !isOrganizer ? 0
+            : game.IsOrganizersParticipating ? OrganizedWithParticipation : OrganizedWithoutParticipation;
+
+        var spectating = game.Spectators.Contains(personId) ? Spectator : 0;
+
+        return new GamePoints(participation, placement, organizing, spectating);
+    }
 }

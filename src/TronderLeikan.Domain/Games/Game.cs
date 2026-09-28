@@ -18,6 +18,8 @@ public sealed class Game : Entity
     public string Name { get; private set; } = string.Empty;
     public string? Description { get; private set; }
     public string? Location { get; private set; }
+    // Dagen spillet ble spilt — null for planlagte spill eller når datoen ikke er kjent
+    public DateOnly? PlayedOn { get; private set; }
     public bool IsDone { get; private set; }
     public GameType GameType { get; private set; }
     public bool IsOrganizersParticipating { get; private set; }
@@ -79,4 +81,5 @@ public sealed class Game : Entity
     public void RemoveBanner() => HasBanner = false;
     public void UpdateDescription(string? description) => Description = description;
     public void UpdateLocation(string? location) => Location = location;
+    public void UpdatePlayedOn(DateOnly? playedOn) => PlayedOn = playedOn;
 }

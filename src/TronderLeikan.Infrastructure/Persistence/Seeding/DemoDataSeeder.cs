@@ -58,6 +58,7 @@ internal static class DemoDataSeeder
         var boccia = Game.Create("Boccia", lagtur.Id);
         boccia.UpdateDescription("Klassisk boccia på grusbanen. Best av tre runder.");
         boccia.UpdateLocation("Hagen");
+        boccia.UpdatePlayedOn(new DateOnly(2026, 6, 10));
         AddParticipants(boccia, kari, ola, ingrid, magnus, silje, henrik);
         boccia.AddOrganizer(tor.Id, withParticipation: false);
         boccia.AddSpectator(astrid.Id);
@@ -68,6 +69,7 @@ internal static class DemoDataSeeder
         var vinquiz = Game.Create("Vinquiz", lagtur.Id);
         vinquiz.UpdateDescription("Ti runder med blindsmaking og spørsmål om toskansk vin.");
         vinquiz.UpdateLocation("Terrassen");
+        vinquiz.UpdatePlayedOn(new DateOnly(2026, 6, 10));
         AddParticipants(vinquiz, kari, silje, henrik, jonas, astrid, tor);
         vinquiz.AddOrganizer(mari.Id, withParticipation: true);
         vinquiz.Complete([silje.Id], [henrik.Id], [kari.Id, jonas.Id]);
@@ -76,13 +78,14 @@ internal static class DemoDataSeeder
         var pizza = Game.Create("Pizzabaking", lagtur.Id);
         pizza.UpdateDescription("Hver deltaker baker én pizza. Juryen er resten av gjengen.");
         pizza.UpdateLocation("Kjøkkenet");
+        pizza.UpdatePlayedOn(new DateOnly(2026, 6, 11));
         AddParticipants(pizza, ingrid, magnus, tor, jonas);
         pizza.AddOrganizer(ola.Id, withParticipation: false);
         pizza.AddSpectator(kari.Id);
         pizza.AddSpectator(silje.Id);
         pizza.Complete([ingrid.Id], [magnus.Id], [tor.Id]);
 
-        // Petanque: planlagt, ikke spilt enda
+        // Petanque: planlagt, ikke spilt enda — derfor ingen spilldato
         var petanque = Game.Create("Petanque", lagtur.Id);
         petanque.UpdateDescription("Spilles siste kveld. Vinneren får siste ord i årsrapporten.");
         petanque.UpdateLocation("Plassen foran huset");
@@ -93,6 +96,7 @@ internal static class DemoDataSeeder
         var mugello = Game.Create("Simracing: Mugello", lagtur.Id, GameType.Simracing);
         mugello.UpdateDescription("Én flying lap hver på Mugello. Raskeste tid vinner.");
         mugello.UpdateLocation("Stua");
+        mugello.UpdatePlayedOn(new DateOnly(2026, 6, 12));
         var mugelloTimes = new (Person Person, long RaceTimeMs)[]
         {
             (magnus, 108_412),
@@ -112,6 +116,7 @@ internal static class DemoDataSeeder
         var marioKart = Game.Create("Mario Kart", fredagspils.Id);
         marioKart.UpdateDescription("Fire grand prix, sammenlagt plassering teller.");
         marioKart.UpdateLocation("Kontoret, sofakroken");
+        marioKart.UpdatePlayedOn(new DateOnly(2026, 1, 16));
         AddParticipants(marioKart, jonas, henrik, kari, astrid, silje, magnus);
         marioKart.AddOrganizer(ingrid.Id, withParticipation: false);
         marioKart.Complete([jonas.Id], [henrik.Id], [kari.Id]);
@@ -120,12 +125,13 @@ internal static class DemoDataSeeder
         var dart = Game.Create("Dart", fredagspils.Id);
         dart.UpdateDescription("501 dobbelt ut. Første til to sett.");
         dart.UpdateLocation("Kontoret, kjøkkenet");
+        dart.UpdatePlayedOn(new DateOnly(2026, 2, 13));
         AddParticipants(dart, tor, mari, ola, kari, henrik);
         dart.AddOrganizer(astrid.Id, withParticipation: false);
         dart.AddSpectator(jonas.Id);
         dart.Complete([tor.Id, mari.Id], [], [ola.Id]);
 
-        // Shuffleboard: planlagt
+        // Shuffleboard: planlagt, uten spilldato
         var shuffleboard = Game.Create("Shuffleboard", fredagspils.Id);
         shuffleboard.UpdateDescription("Neste fredag. Ta med egne pucker om du har.");
         shuffleboard.UpdateLocation("Kontoret, kjøkkenet");

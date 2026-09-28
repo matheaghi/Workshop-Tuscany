@@ -139,4 +139,33 @@ public class GameTests
 
         game.HasBanner.Should().BeTrue();
     }
+
+    [Fact]
+    public void Create_HarIngenSpilldato()
+    {
+        var game = Game.Create("Kubb", Guid.NewGuid());
+
+        game.PlayedOn.Should().BeNull();
+    }
+
+    [Fact]
+    public void UpdatePlayedOn_SetterSpilldato()
+    {
+        var game = Game.Create("Kubb", Guid.NewGuid());
+
+        game.UpdatePlayedOn(new DateOnly(2026, 6, 12));
+
+        game.PlayedOn.Should().Be(new DateOnly(2026, 6, 12));
+    }
+
+    [Fact]
+    public void UpdatePlayedOn_MedNull_FjernerSpilldato()
+    {
+        var game = Game.Create("Kubb", Guid.NewGuid());
+        game.UpdatePlayedOn(new DateOnly(2026, 6, 12));
+
+        game.UpdatePlayedOn(null);
+
+        game.PlayedOn.Should().BeNull();
+    }
 }

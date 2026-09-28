@@ -1,7 +1,9 @@
 using TronderLeikan.Application.Common.Interfaces;
 using TronderLeikan.Application.Games.Commands.UploadGameBanner;
 using TronderLeikan.Application.Games.Queries.GetGameById;
+using TronderLeikan.Application.Games.Queries.GetGamesByTournament;
 using TronderLeikan.Domain.Games;
+using TronderLeikan.Domain.Tournaments;
 
 namespace TronderLeikan.Application.Tests.Games;
 
@@ -37,5 +39,35 @@ public sealed class GameBannerAndQueryTests
         var result = await new GetGameByIdQueryHandler(db).Handle(new GetGameByIdQuery(game.Id));
         Assert.True(result.IsSuccess);
         Assert.Equal("Spill", result.Value!.Name);
+    }
+
+    [Fact]
+    public async Task GetGameById_ReturnererSpilldato()
+    {
+        await using var db = TestAppDbContext.Create();
+        var game = Game.Create("Spill", Guid.NewGuid());
+        game.UpdatePlayedOn(new DateOnly(2026, 6, 12));
+        db.Games.Add(game);
+        await db.SaveChangesAsync();
+        var result = await new GetGameByIdQueryHandler(db).Handle(new GetGameByIdQuery(game.Id));
+        Assert.True(result.IsSuccess);
+        Assert.Equal(new DateOnly(2026, 6, 12), result.Value!.PlayedOn);
+    }
+
+    [Fact]
+    public async Task GetGamesByTournament_ReturnererSpilldato()
+    {
+        await using var db = TestAppDbContext.Create();
+        var tournament = Tournament.Create("NM", "nm");
+        db.Tournaments.Add(tournament);
+        var medDato = Game.Create("Med dato", tournament.Id);
+        medDato.UpdatePlayedOn(new DateOnly(2026, 6, 12));
+        var utenDato = Game.Create("Uten dato", tournament.Id);
+        db.Games.AddRange(medDato, utenDato);
+        await db.SaveChangesAsync();
+        var result = await new GetGamesByTournamentQueryHandler(db).Handle(new GetGamesByTournamentQuery(tournament.Id));
+        Assert.True(result.IsSuccess);
+        Assert.Equal(new DateOnly(2026, 6, 12), result.Value!.Single(g => g.Id == medDato.Id).PlayedOn);
+        Assert.Null(result.Value!.Single(g => g.Id == utenDato.Id).PlayedOn);
     }
 }

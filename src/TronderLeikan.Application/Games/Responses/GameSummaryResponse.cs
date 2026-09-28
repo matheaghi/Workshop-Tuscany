@@ -8,5 +8,6 @@ public record GameSummaryResponse(
     Guid TournamentId,
     string Name,
     string? Location,
+    DateOnly? PlayedOn,
     bool IsDone,
     GameType GameType);

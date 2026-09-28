@@ -29,35 +29,21 @@ public sealed class GetScoreboardQueryHandler(IAppDbContext db)
             .Where(p => allPersonIds.Contains(p.Id))
             .ToDictionaryAsync(p => p.Id, ct);
 
-        // Akkumuler poeng per person
+        // Akkumuler poeng per person — poengreglene ligger i TournamentPointRules.PointsFor
         var points = new Dictionary<Guid, int>();
 
         foreach (var game in games)
         {
-            // Deltakere får deltakerpoeng
-            foreach (var personId in game.Participants)
-                points[personId] = points.GetValueOrDefault(personId) + rules.Participation;
+            var personIdsInGame = game.Participants
+                .Concat(game.Organizers)
+                .Concat(game.Spectators)
+                .Concat(game.FirstPlace)
+                .Concat(game.SecondPlace)
+                .Concat(game.ThirdPlace)
+                .Distinct();
 
-            // Arrangører — deltakelse avhenger av IsOrganizersParticipating
-            foreach (var personId in game.Organizers)
-            {
-                if (game.IsOrganizersParticipating)
-                    points[personId] = points.GetValueOrDefault(personId) + rules.OrganizedWithParticipation + rules.Participation;
-                else
-                    points[personId] = points.GetValueOrDefault(personId) + rules.OrganizedWithoutParticipation;
-            }
-
-            // Tilskuere
-            foreach (var personId in game.Spectators)
-                points[personId] = points.GetValueOrDefault(personId) + rules.Spectator;
-
-            // Plasseringer er additive oppå deltakerpoeng
-            foreach (var personId in game.FirstPlace)
-                points[personId] = points.GetValueOrDefault(personId) + rules.FirstPlace;
-            foreach (var personId in game.SecondPlace)
-                points[personId] = points.GetValueOrDefault(personId) + rules.SecondPlace;
-            foreach (var personId in game.ThirdPlace)
-                points[personId] = points.GetValueOrDefault(personId) + rules.ThirdPlace;
+            foreach (var personId in personIdsInGame)
+                points[personId] = points.GetValueOrDefault(personId) + rules.PointsFor(game, personId).Total;
         }
 
         // Sorter synkende, beregn rank med ties

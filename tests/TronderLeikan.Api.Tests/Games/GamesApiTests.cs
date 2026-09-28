@@ -35,6 +35,24 @@ public class GamesApiTests(TronderLeikanApiFactory factory)
     }
 
     [Fact]
+    public async Task POST_games_med_spilldato_returneres_av_GET()
+    {
+        var tournamentId = await OpprettTurnering();
+
+        var gameId = await (await _client.PostAsJsonAsync("/api/v1/games", new
+        {
+            tournamentId,
+            name = "Kubb",
+            gameType = 0,
+            playedOn = "2026-06-12"
+        })).Content.ReadFromJsonAsync<Guid>();
+
+        var body = await (await _client.GetAsync($"/api/v1/games/{gameId}"))
+            .Content.ReadFromJsonAsync<JsonElement>();
+        body.GetProperty("playedOn").GetString().Should().Be("2026-06-12");
+    }
+
+    [Fact]
     public async Task GET_game_som_ikke_finnes_returnerer_404()
     {
         var response = await _client.GetAsync($"/api/v1/games/{Guid.NewGuid()}");

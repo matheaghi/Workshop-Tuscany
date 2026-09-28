@@ -88,6 +88,25 @@ public sealed class GamePersistenceTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Game_MedSpilldato_KanLagresOgHentes()
+    {
+        await using var context = CreateContext();
+
+        var medDato = Game.Create("Kubb", Guid.NewGuid());
+        medDato.UpdatePlayedOn(new DateOnly(2026, 6, 12));
+        var utenDato = Game.Create("Petanque", Guid.NewGuid());
+
+        context.Games.AddRange(medDato, utenDato);
+        await context.SaveChangesAsync();
+
+        // Last på nytt fra DB
+        context.ChangeTracker.Clear();
+
+        (await context.Games.FindAsync(medDato.Id))!.PlayedOn.Should().Be(new DateOnly(2026, 6, 12));
+        (await context.Games.FindAsync(utenDato.Id))!.PlayedOn.Should().BeNull();
+    }
+
+    [Fact]
     public async Task Tournament_MedPointRules_KanLagresOgHentes()
     {
         await using var context = CreateContext();

@@ -1,6 +1,7 @@
 using TronderLeikan.Application.Games.Commands.CreateGame;
 using TronderLeikan.Application.Games.Commands.AddParticipant;
 using TronderLeikan.Application.Games.Commands.CompleteGame;
+using TronderLeikan.Application.Games.Commands.UpdateGame;
 using TronderLeikan.Domain.Games;
 using TronderLeikan.Domain.Persons;
 using TronderLeikan.Domain.Tournaments;
@@ -19,6 +20,47 @@ public sealed class GameCommandHandlerTests
         var result = await new CreateGameCommandHandler(db).Handle(new CreateGameCommand(tournament.Id, "Dartspill", GameType.Standard));
         Assert.True(result.IsSuccess);
         Assert.Single(db.Games.ToList());
+    }
+
+    [Fact]
+    public async Task CreateGame_MedSpilldato_LagrerSpilldato()
+    {
+        await using var db = TestAppDbContext.Create();
+        var tournament = Tournament.Create("NM", "nm");
+        db.Tournaments.Add(tournament);
+        await db.SaveChangesAsync();
+        var result = await new CreateGameCommandHandler(db).Handle(
+            new CreateGameCommand(tournament.Id, "Dartspill", GameType.Standard, new DateOnly(2026, 6, 12)));
+        Assert.True(result.IsSuccess);
+        var game = await db.Games.FindAsync(result.Value);
+        Assert.Equal(new DateOnly(2026, 6, 12), game!.PlayedOn);
+    }
+
+    [Fact]
+    public async Task CreateGame_UtenSpilldato_LagrerSpillUtenDato()
+    {
+        await using var db = TestAppDbContext.Create();
+        var tournament = Tournament.Create("NM", "nm");
+        db.Tournaments.Add(tournament);
+        await db.SaveChangesAsync();
+        var result = await new CreateGameCommandHandler(db).Handle(new CreateGameCommand(tournament.Id, "Dartspill", GameType.Standard));
+        Assert.True(result.IsSuccess);
+        var game = await db.Games.FindAsync(result.Value);
+        Assert.Null(game!.PlayedOn);
+    }
+
+    [Fact]
+    public async Task UpdateGame_MedSpilldato_OppdatererSpilldato()
+    {
+        await using var db = TestAppDbContext.Create();
+        var game = Game.Create("Spill", Guid.NewGuid());
+        db.Games.Add(game);
+        await db.SaveChangesAsync();
+        var result = await new UpdateGameCommandHandler(db).Handle(
+            new UpdateGameCommand(game.Id, "Spill", null, new DateOnly(2026, 6, 12)));
+        Assert.True(result.IsSuccess);
+        var updated = await db.Games.FindAsync(game.Id);
+        Assert.Equal(new DateOnly(2026, 6, 12), updated!.PlayedOn);
     }
 
     [Fact]
