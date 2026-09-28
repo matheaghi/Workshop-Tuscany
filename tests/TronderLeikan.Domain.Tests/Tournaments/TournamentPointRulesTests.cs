@@ -99,6 +99,21 @@ public class TournamentPointRulesTests
     }
 
     [Fact]
+    public void PointsFor_ArrangørMedDeltakelseSomOgsåErDeltaker_FårDeltakerpoengBareÉnGang()
+    {
+        var arrangør = Guid.NewGuid();
+        var game = Game.Create("Vinquiz", Guid.NewGuid());
+        game.AddOrganizer(arrangør, withParticipation: true);
+        game.AddParticipant(arrangør);
+        game.Complete([arrangør], [], []);
+
+        var points = TournamentPointRules.Default().PointsFor(game, arrangør);
+
+        points.Should().Be(new GamePoints(Participation: 3, Placement: 3, Organizing: 1, Spectating: 0));
+        points.Total.Should().Be(7);
+    }
+
+    [Fact]
     public void PointsFor_Tilskuer_FårTilskuerpoeng()
     {
         var tilskuer = Guid.NewGuid();

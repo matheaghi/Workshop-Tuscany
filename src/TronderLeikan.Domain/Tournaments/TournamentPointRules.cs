@@ -41,10 +41,9 @@ public sealed class TournamentPointRules
     {
         var isOrganizer = game.Organizers.Contains(personId);
 
-        // Arrangør som spiller får deltakerpoeng via arrangørrollen, i tillegg til eventuell deltakerrolle
-        var participation =
-            (game.Participants.Contains(personId) ? Participation : 0) +
-            (isOrganizer && game.IsOrganizersParticipating ? Participation : 0);
+        // Arrangør som spiller får deltakerpoeng — men bare én gang, selv om personen også er lagt til som deltaker
+        var isPlaying = game.Participants.Contains(personId) || (isOrganizer && game.IsOrganizersParticipating);
+        var participation = isPlaying ? Participation : 0;
 
         // Plasspoeng kommer i tillegg til deltakerpoeng
         var placement =
