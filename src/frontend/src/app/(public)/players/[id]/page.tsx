@@ -267,7 +267,7 @@ export default async function PlayerProfilePage({
           // Nyeste turnering først i nedtrekkslisten, samme rekkefølge som spillene
           tournaments={[...history.tournaments]
             .reverse()
-            .map((t) => ({ slug: t.slug, name: t.name }))}
+            .map((t) => ({ slug: t.slug, name: t.name, rank: t.rank }))}
         />
       )}
     </div>

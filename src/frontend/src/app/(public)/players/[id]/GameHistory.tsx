@@ -3,6 +3,46 @@
 import { useState } from "react";
 import Link from "next/link";
 import { formatPlayedOn, formatRoles, type HistoryGame } from "./history";
+import { HistoryChart, type ChartPoint } from "./HistoryChart";
+
+type TournamentOption = { slug: string; name: string; rank: number };
+
+const shortDate = new Intl.DateTimeFormat("nb-NO", {
+  day: "numeric",
+  month: "short",
+  timeZone: "UTC",
+});
+
+// Poeng per spill i én turnering, eldste først. Spill uten dato havner sist; samme dag sorteres på navn.
+function pointsPerGame(games: HistoryGame[]): ChartPoint[] {
+  return [...games]
+    .sort((a, b) => {
+      if (a.playedOn !== b.playedOn) {
+        if (a.playedOn === null) return 1;
+        if (b.playedOn === null) return -1;
+        return a.playedOn.localeCompare(b.playedOn);
+      }
+      return a.name.localeCompare(b.name, "nb");
+    })
+    .map((g) => ({
+      key: g.gameId,
+      label: `${g.name} · ${formatPlayedOn(g.playedOn)}`,
+      tick: g.playedOn ? shortDate.format(new Date(g.playedOn)) : "Uten dato",
+      value: g.points.total,
+      valueText: `${g.points.total} poeng`,
+    }));
+}
+
+// Plassering per turnering, eldste først (tournaments kommer med nyeste først)
+function rankPerTournament(tournaments: TournamentOption[]): ChartPoint[] {
+  return [...tournaments].reverse().map((t) => ({
+    key: t.slug,
+    label: t.name,
+    tick: t.name,
+    value: t.rank,
+    valueText: `${t.rank}. plass`,
+  }));
+}
 
 // Én rad i historikken: dato, spill, turnering, rolle, plassering og poeng
 function HistoryRow({ game }: { game: HistoryGame }) {
@@ -44,13 +84,28 @@ export function GameHistory({
   tournaments,
 }: {
   games: HistoryGame[];
-  tournaments: { slug: string; name: string }[];
+  tournaments: TournamentOption[];
 }) {
   // Tom streng betyr «Alle»
   const [selected, setSelected] = useState("");
 
   const shown =
     selected === "" ? games : games.filter((g) => g.tournamentSlug === selected);
+
+  // Diagrammet trenger minst to punkter for å vise en utvikling
+  const selectedName = tournaments.find((t) => t.slug === selected)?.name;
+  const chart =
+    selected === ""
+      ? tournaments.length > 1 && {
+          title: "Plassering per turnering",
+          points: rankPerTournament(tournaments),
+          invert: true,
+        }
+      : shown.length > 1 && {
+          title: `Poeng per spill i ${selectedName}`,
+          points: pointsPerGame(shown),
+          invert: false,
+        };
 
   return (
     <section aria-labelledby="history-heading" className="mt-8">
@@ -84,6 +139,16 @@ export function GameHistory({
           )}
         </div>
       </div>
+
+      {chart && (
+        <HistoryChart
+          // Ny key per valg, så pekertilstanden nullstilles når turneringen byttes
+          key={selected}
+          title={chart.title}
+          points={chart.points}
+          invert={chart.invert}
+        />
+      )}
 
       {shown.length === 0 ? (
         <p className="text-gray-500">Ingen ferdige spill ennå.</p>
