@@ -73,7 +73,7 @@ public class TournamentsApiTests(TronderLeikanApiFactory factory)
             new { name = "Spill-liste", slug = $"spill-{Guid.NewGuid():N}" }))
             .Content.ReadFromJsonAsync<Guid>();
 
-        var gameResponse = await _client.PostAsJsonAsync("/api/v1/games", new { name = "Boccia", tournamentId });
+        var gameResponse = await _client.PostAsJsonAsync("/api/v1/games", new { name = "Boccia", tournamentId, playedOn = "2026-06-12" });
         gameResponse.StatusCode.Should().Be(HttpStatusCode.Created);
         var gameId = await gameResponse.Content.ReadFromJsonAsync<Guid>();
 

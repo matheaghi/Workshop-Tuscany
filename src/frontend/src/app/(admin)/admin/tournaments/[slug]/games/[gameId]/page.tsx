@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { addParticipantAction, completeGameAction } from "./actions";
+import { addParticipantAction, completeGameAction, updatePlayedOnAction } from "./actions";
 
 // Datamodell for spill med detaljer - inkluderer deltakere og plasseringer
 type GameDetailResponse = {
@@ -9,6 +9,8 @@ type GameDetailResponse = {
   tournamentId: string;
   name: string;
   description?: string;
+  // ISO-dato (ÅÅÅÅ-MM-DD) — null for eldre spill uten dato
+  playedOn: string | null;
   isDone: boolean;
   gameType: string;
   isOrganizersParticipating: boolean;
@@ -30,6 +32,18 @@ type PersonSummaryResponse = {
 
 // API-basis-URL - hentes fra miljøvariabel, kun tilgjengelig server-side
 const API_BASE = process.env.API_BASE_URL ?? "http://localhost:5000";
+
+// UTC hindrer at datoen forskyves én dag når serveren står i en annen tidssone
+const dateFormat = new Intl.DateTimeFormat("nb-NO", {
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+  timeZone: "UTC",
+});
+
+function formatPlayedOn(playedOn: string | null): string {
+  return playedOn ? dateFormat.format(new Date(playedOn)) : "Uten dato";
+}
 
 // Henter ett spill fra backend - returnerer null ved feil
 async function getGame(gameId: string): Promise<GameDetailResponse | null> {
@@ -107,6 +121,14 @@ export default async function AdminGameDetailPage({ params }: Props) {
 
   // Bundet Server Action - binder gameId og turneringens slug inn i actionen
   const completeGame = completeGameAction.bind(null, gameId, tournamentSlug);
+  // Bundet Server Action - navn og beskrivelse sendes med, siden PUT erstatter dem
+  const updatePlayedOn = updatePlayedOnAction.bind(
+    null,
+    gameId,
+    tournamentSlug,
+    game.name,
+    game.description ?? null
+  );
 
   return (
     <>
@@ -125,6 +147,12 @@ export default async function AdminGameDetailPage({ params }: Props) {
           <span>{game.gameType}</span>
           <span>·</span>
           <span>{game.isDone ? "Ferdig" : "Pågår"}</span>
+          <span>·</span>
+          {game.playedOn ? (
+            <time dateTime={game.playedOn}>{formatPlayedOn(game.playedOn)}</time>
+          ) : (
+            <span>{formatPlayedOn(null)}</span>
+          )}
           {game.isOrganizersParticipating && (
             <>
               <span>·</span>
@@ -133,6 +161,37 @@ export default async function AdminGameDetailPage({ params }: Props) {
           )}
         </div>
       </header>
+
+      {/* ---- Dato - kan endres også etter at spillet er ferdig, men ikke fjernes ---- */}
+      <section
+        className="border border-gray-200 rounded p-4 mb-4"
+        aria-labelledby="played-on-title"
+      >
+        <h2 className="text-lg font-semibold mb-3" id="played-on-title">
+          Dato
+        </h2>
+        <form action={updatePlayedOn} className="flex flex-wrap items-end gap-3">
+          <div className="min-w-[160px]">
+            <label htmlFor="playedOn" className="block text-sm font-medium mb-1">
+              Spilldato
+            </label>
+            <input
+              id="playedOn"
+              name="playedOn"
+              type="date"
+              required
+              defaultValue={game.playedOn ?? ""}
+              className="rounded border border-gray-300 px-2 py-1.5 text-sm w-full"
+            />
+          </div>
+          <button
+            type="submit"
+            className="rounded bg-gray-900 px-3 py-1.5 text-sm text-white hover:bg-gray-700 disabled:opacity-50"
+          >
+            Lagre dato
+          </button>
+        </form>
+      </section>
 
       {/* ---- Legg til deltaker ---- */}
       {!game.isDone && (

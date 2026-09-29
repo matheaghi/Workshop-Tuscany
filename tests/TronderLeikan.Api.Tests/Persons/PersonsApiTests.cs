@@ -76,7 +76,7 @@ public class PersonsApiTests(TronderLeikanApiFactory factory)
         var tournamentId = await (await _client.PostAsJsonAsync("/api/v1/tournaments",
             new { name = "Poengtest", slug = $"p-{Guid.NewGuid():N}" })).Content.ReadFromJsonAsync<Guid>();
         var gameId = await (await _client.PostAsJsonAsync("/api/v1/games",
-            new { tournamentId, name = "Kubb", gameType = 0 })).Content.ReadFromJsonAsync<Guid>();
+            new { tournamentId, name = "Kubb", gameType = 0, playedOn = "2026-06-12" })).Content.ReadFromJsonAsync<Guid>();
         await _client.PostAsJsonAsync($"/api/v1/games/{gameId}/participants", new { gameId, personId });
         await _client.PostAsJsonAsync($"/api/v1/games/{gameId}/complete",
             new { gameId, firstPlace = new[] { personId }, secondPlace = Array.Empty<Guid>(), thirdPlace = Array.Empty<Guid>() });

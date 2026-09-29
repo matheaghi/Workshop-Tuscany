@@ -26,10 +26,24 @@ type GameSummaryResponse = {
   name: string;
   isDone: boolean;
   gameType: string;
+  // ISO-dato (ÅÅÅÅ-MM-DD) — null for eldre spill uten dato
+  playedOn: string | null;
 };
 
 // API-basis-URL — hentes fra miljøvariabel, kun tilgjengelig server-side
 const API_BASE = process.env.API_BASE_URL ?? "http://localhost:5000";
+
+// UTC hindrer at datoen forskyves én dag når serveren står i en annen tidssone
+const dateFormat = new Intl.DateTimeFormat("nb-NO", {
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+  timeZone: "UTC",
+});
+
+function formatPlayedOn(playedOn: string | null): string {
+  return playedOn ? dateFormat.format(new Date(playedOn)) : "Uten dato";
+}
 
 // Henter turnering med detaljer fra backend på slug — returnerer null ved feil
 async function getTournament(
@@ -279,6 +293,19 @@ export default async function AdminTournamentDetailPage({ params }: Props) {
             />
           </div>
 
+          <div className="min-w-[160px]">
+            <label htmlFor="playedOn" className="block text-sm font-medium mb-1">
+              Dato
+            </label>
+            <input
+              id="playedOn"
+              name="playedOn"
+              type="date"
+              required
+              className="h-9 w-full rounded border border-gray-300 px-2 text-sm"
+            />
+          </div>
+
           <div className="flex-1 min-w-[180px]">
             <label htmlFor="gameType" className="block text-sm font-medium mb-1">
               Spilltype
@@ -348,6 +375,13 @@ export default async function AdminTournamentDetailPage({ params }: Props) {
                   <span className="text-sm font-medium">{game.name}</span>
                   <span className="text-sm text-gray-500">
                     {game.gameType}
+                  </span>
+                  <span className="text-sm text-gray-500">
+                    {game.playedOn ? (
+                      <time dateTime={game.playedOn}>{formatPlayedOn(game.playedOn)}</time>
+                    ) : (
+                      formatPlayedOn(null)
+                    )}
                   </span>
                   {game.isDone && (
                     <span className="text-sm text-green-700">Ferdig</span>

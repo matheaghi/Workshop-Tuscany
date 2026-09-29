@@ -15,6 +15,8 @@ En **turnering** er en samling spill over en periode, med sitt eget sett poengre
 
 Et **spill** er én konkurranse i en turnering.
 Et spill har deltakere, arrangører og tilskuere.
+Nye spill må ha en dato, og en dato kan endres men ikke fjernes.
+Eldre spill uten dato er fortsatt gyldige.
 Når spillet er ferdig registreres første-, andre- og tredjeplass.
 Flere personer kan dele en plassering.
 Bare spill som er markert som ferdige teller på scoreboardet.

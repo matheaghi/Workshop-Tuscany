@@ -37,19 +37,6 @@ public sealed class GameCommandHandlerTests
     }
 
     [Fact]
-    public async Task CreateGame_UtenSpilldato_LagrerSpillUtenDato()
-    {
-        await using var db = TestAppDbContext.Create();
-        var tournament = Tournament.Create("NM", "nm");
-        db.Tournaments.Add(tournament);
-        await db.SaveChangesAsync();
-        var result = await new CreateGameCommandHandler(db).Handle(new CreateGameCommand(tournament.Id, "Dartspill", GameType.Standard));
-        Assert.True(result.IsSuccess);
-        var game = await db.Games.FindAsync(result.Value);
-        Assert.Null(game!.PlayedOn);
-    }
-
-    [Fact]
     public async Task UpdateGame_MedSpilldato_OppdatererSpilldato()
     {
         await using var db = TestAppDbContext.Create();

@@ -26,6 +26,7 @@ public class GamesApiTests(TronderLeikanApiFactory factory)
         {
             tournamentId,
             name = "Testspill",
+            playedOn = "2026-06-12",
             gameType = 0 // Standard
         });
 
@@ -53,6 +54,48 @@ public class GamesApiTests(TronderLeikanApiFactory factory)
     }
 
     [Fact]
+    public async Task POST_games_uten_dato_returnerer_400()
+    {
+        var tournamentId = await OpprettTurnering();
+
+        var response = await _client.PostAsJsonAsync("/api/v1/games",
+            new { tournamentId, name = "Udatert", gameType = 0 });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        body.GetProperty("title").GetString().Should().Be("Game.PlayedOnRequired");
+    }
+
+    [Fact]
+    public async Task PUT_games_uten_dato_returnerer_400_og_beholder_datoen()
+    {
+        var tournamentId = await OpprettTurnering();
+        var gameId = await (await _client.PostAsJsonAsync("/api/v1/games",
+            new { tournamentId, name = "Kubb", gameType = 0, playedOn = "2026-06-12" })).Content.ReadFromJsonAsync<Guid>();
+
+        var response = await _client.PutAsJsonAsync($"/api/v1/games/{gameId}", new { gameId, name = "Kubb" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var body = await (await _client.GetAsync($"/api/v1/games/{gameId}")).Content.ReadFromJsonAsync<JsonElement>();
+        body.GetProperty("playedOn").GetString().Should().Be("2026-06-12");
+    }
+
+    [Fact]
+    public async Task PUT_games_med_ny_dato_oppdaterer_datoen()
+    {
+        var tournamentId = await OpprettTurnering();
+        var gameId = await (await _client.PostAsJsonAsync("/api/v1/games",
+            new { tournamentId, name = "Kubb", gameType = 0, playedOn = "2026-06-12" })).Content.ReadFromJsonAsync<Guid>();
+
+        var response = await _client.PutAsJsonAsync($"/api/v1/games/{gameId}",
+            new { gameId, name = "Kubb", playedOn = "2026-06-13" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var body = await (await _client.GetAsync($"/api/v1/games/{gameId}")).Content.ReadFromJsonAsync<JsonElement>();
+        body.GetProperty("playedOn").GetString().Should().Be("2026-06-13");
+    }
+
+    [Fact]
     public async Task GET_game_som_ikke_finnes_returnerer_404()
     {
         var response = await _client.GetAsync($"/api/v1/games/{Guid.NewGuid()}");
@@ -74,6 +117,7 @@ public class GamesApiTests(TronderLeikanApiFactory factory)
         {
             tournamentId,
             name = "Finalespill",
+            playedOn = "2026-06-12",
             gameType = 0
         })).Content.ReadFromJsonAsync<Guid>();
 
@@ -116,6 +160,7 @@ public class GamesApiTests(TronderLeikanApiFactory factory)
         {
             tournamentId,
             name = "Simracing 1",
+            playedOn = "2026-06-12",
             gameType = 1 // Simracing
         })).Content.ReadFromJsonAsync<Guid>();
 
@@ -152,7 +197,7 @@ public class GamesApiTests(TronderLeikanApiFactory factory)
 
         var gameId = await (await _client.PostAsJsonAsync("/api/v1/games", new
         {
-            tournamentId, name = "Simracing 2", gameType = 1
+            tournamentId, name = "Simracing 2", gameType = 1, playedOn = "2026-06-12"
         })).Content.ReadFromJsonAsync<Guid>();
 
         await _client.PostAsJsonAsync($"/api/v1/games/{gameId}/simracing-results",
