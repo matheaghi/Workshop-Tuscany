@@ -43,4 +43,4 @@ Run `dotnet test` (Api and Infrastructure tests need Docker). If the frontend ch
 
 Then, if step 4 stopped an AppHost, restart it with `aspire start` from the main clone.
 
-Done when everything is green and any AppHost stopped in step 4 is running again. Report to the user: what changed (file references), the before/after test result, and anything left open. Leave committing to the user.
+Done when everything is green and any AppHost stopped in step 4 is running again. Report to the user: what changed (file references), the before/after test result, and anything left open. End the report with a reminder to commit, listing the uncommitted files from `git status`. The user makes the commit.
