@@ -4,6 +4,7 @@ Trønder Leikan: internal tournament/scoring platform. Domain rules (point rules
 
 ## Communication
 - When asking me questions, ask ONE question at a time and wait for my answer before asking the next.
+- Before saying anything is committed or uncommitted, or asking me to commit, check with `git status` and `git log`.
 
 ## Scope
 - Implement the simplest solution that meets the story. Don't add extras such as URL state, persistence, or config options unless I ask for them.
