@@ -8,6 +8,7 @@ using TronderLeikan.Application.Persons.Commands.UpdatePerson;
 using TronderLeikan.Application.Persons.Commands.UploadPersonImage;
 using TronderLeikan.Application.Persons.Queries.GetPersonById;
 using TronderLeikan.Application.Persons.Queries.GetPersonHistory;
+using TronderLeikan.Application.Persons.Queries.GetPersonImage;
 using TronderLeikan.Application.Persons.Queries.GetPersons;
 using TronderLeikan.Application.Persons.Responses;
 
@@ -45,6 +46,12 @@ public sealed class PersonsController(ISender sender) : ApiControllerBase
     [HttpDelete("{id:guid}")]
     public async Task<ActionResult> Delete(Guid id, CancellationToken ct) =>
         (await sender.Send(new DeletePersonCommand(id), ct)).Match<ActionResult>(() => NoContent(), Problem);
+
+    // Henter profilbildet — 404 hvis personen ikke har bilde
+    [HttpGet("{id:guid}/image")]
+    public async Task<ActionResult> GetImage(Guid id, CancellationToken ct) =>
+        (await sender.Query(new GetPersonImageQuery(id), ct))
+            .Match<ActionResult>(image => File(image.Data, image.ContentType), Problem);
 
     // Laster opp profilbilde for en person
     [HttpPut("{id:guid}/image")]

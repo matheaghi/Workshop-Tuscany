@@ -163,7 +163,7 @@ function buildStory(
   return story;
 }
 
-// Viser deltaker- og seiersrekke som to små bokser ved siden av navnet — vises kun når det er noe å vise
+// Viser deltaker- og seiersrekke som små bokser under navnet — vises kun når det er noe å vise
 function StreakTiles({
   currentParticipationStreak,
   currentWinStreak,
@@ -177,26 +177,26 @@ function StreakTiles({
   if (!showParticipation && !showWin) return null;
 
   return (
-    <div className="flex flex-wrap gap-4">
+    <ul className="mt-6 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
       {showParticipation && (
-        <div className="border border-gray-200 rounded p-4">
+        <li className="border border-gray-200 rounded p-4">
           <p className="text-sm text-gray-600">
             <span aria-hidden="true">🔥</span> Deltakerrekke
           </p>
           <p className="text-lg font-semibold">{currentParticipationStreak} spill på rad</p>
-        </div>
+        </li>
       )}
       {showWin && (
-        <div className="border border-gray-200 rounded p-4">
+        <li className="border border-gray-200 rounded p-4">
           <p className="text-sm text-gray-600">
             <span aria-hidden="true">🏆</span> Seiersrekke
           </p>
           <p className="text-lg font-semibold">
             {currentWinStreak} {currentWinStreak === 1 ? "seier" : "seire"} på rad
           </p>
-        </div>
+        </li>
       )}
-    </div>
+    </ul>
   );
 }
 
@@ -237,7 +237,7 @@ function InitialsAvatarLarge({
   return (
     <div
       aria-hidden="true"
-      className="w-[7.5rem] h-[7.5rem] rounded-full border border-gray-200 bg-gray-100 flex items-center justify-center text-3xl font-semibold text-gray-600 shrink-0"
+      className="size-20 sm:size-[7.5rem] rounded-full border border-gray-200 bg-gray-100 flex items-center justify-center text-2xl sm:text-3xl font-semibold text-gray-600 shrink-0"
     >
       {initials}
     </div>
@@ -264,47 +264,62 @@ export default async function PlayerProfilePage({
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
       <div className="mb-4">
-        <Link href="/players" className="text-sm underline">
+        {/* Negativ marg gir et treffområde på 44px uten å flytte teksten */}
+        <Link
+          href="/players"
+          className="inline-flex min-h-11 items-center -my-3 text-sm underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+        >
           Alle spillere
         </Link>
       </div>
 
-      <div className="flex flex-col items-start gap-4">
+      {/* Bildet har tom alt, siden navnet står rett ved siden av */}
+      <div className="flex items-center gap-4">
         {person.hasProfileImage ? (
           /* eslint-disable-next-line @next/next/no-img-element */
           <img
             src={`/api/v1/persons/${person.id}/image`}
-            alt={`${person.firstName} ${person.lastName}`}
+            alt=""
             width={120}
             height={120}
-            className="w-[7.5rem] h-[7.5rem] rounded-full object-cover border border-gray-200"
+            className="size-20 sm:size-[7.5rem] rounded-full object-cover border border-gray-200 shrink-0"
           />
         ) : (
           <InitialsAvatarLarge firstName={person.firstName} lastName={person.lastName} />
         )}
 
-        {/* Rekkene står ved siden av navnet, og brytes under på smale skjermer */}
-        <div className="flex flex-wrap items-center gap-4">
-          <h1 className="text-2xl font-semibold">
-            {person.firstName} {person.lastName}
-          </h1>
-
-          {history && (
-            <StreakTiles
-              currentParticipationStreak={history.currentParticipationStreak}
-              currentWinStreak={history.currentWinStreak}
-            />
-          )}
-        </div>
+        <h1 className="text-2xl font-semibold break-words min-w-0">
+          {person.firstName} {person.lastName}
+        </h1>
       </div>
 
-      {/* Oppsummering og historikk utelates hvis historikken ikke kunne hentes */}
+      {history && (
+        <StreakTiles
+          currentParticipationStreak={history.currentParticipationStreak}
+          currentWinStreak={history.currentWinStreak}
+        />
+      )}
+
+      {/* Oppsummeringen utelates hvis historikken ikke kunne hentes */}
       {history && games && (
-        <section
-          aria-label="Oppsummering"
-          className="mt-6 border border-gray-200 rounded p-4"
-        >
-          <p>{buildStory(person.firstName, history, games).join(" ")}</p>
+        <section aria-labelledby="summary-heading" className="mt-8">
+          <h2 id="summary-heading" className="text-lg font-semibold mb-2">
+            Oppsummering
+          </h2>
+          <div className="border border-gray-200 rounded p-4">
+            <p>{buildStory(person.firstName, history, games).join(" ")}</p>
+          </div>
+        </section>
+      )}
+
+      {!history && (
+        <section aria-labelledby="history-heading" className="mt-8">
+          <h2 id="history-heading" className="text-lg font-semibold mb-2">
+            Spillhistorikk
+          </h2>
+          <p className="text-gray-500">
+            Klarte ikke å hente spillhistorikken. Prøv igjen senere.
+          </p>
         </section>
       )}
 

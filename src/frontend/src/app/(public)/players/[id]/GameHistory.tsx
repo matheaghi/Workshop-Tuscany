@@ -76,7 +76,7 @@ function HistoryRow({ game }: { game: HistoryGame }) {
         </div>
         <Link
           href={`/tournaments/${game.tournamentSlug}/games/${game.gameId}`}
-          className="font-medium underline"
+          className="font-medium underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
         >
           {game.name}
         </Link>
@@ -97,25 +97,34 @@ function HistoryRow({ game }: { game: HistoryGame }) {
             aria-expanded={open}
             aria-controls={explanationId}
             aria-label={`Hvorfor ${total} poeng?`}
-            className="w-6 h-6 rounded-full border border-gray-400 text-sm font-semibold leading-none text-gray-700 hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+            // Treffområdet er 44px, men sirkelen er fortsatt 24px; negativ marg holder raden like høy.
+            // Fokusringen tegnes rundt sirkelen, der den var før.
+            className="group -m-2.5 inline-flex size-11 items-center justify-center outline-none"
           >
-            ?
+            <span
+              aria-hidden="true"
+              className="inline-flex size-6 items-center justify-center rounded-full border border-gray-400 text-sm font-semibold leading-none text-gray-700 group-hover:bg-gray-100 group-focus-visible:outline group-focus-visible:outline-2 group-focus-visible:outline-offset-2"
+            >
+              ?
+            </span>
           </button>
         </div>
       </div>
 
-      {open && (
-        <div id={explanationId} className="basis-full rounded bg-gray-50 px-3 py-2 text-sm">
-          <p>
-            {lines.length === 0
-              ? "Ingen poeng i dette spillet."
-              : `${lines.map((l) => `${reasonLabels[l.reason]} ${l.points}`).join(" + ")} = ${total} poeng`}
-          </p>
-          <Link href={`/tournaments/${game.tournamentSlug}`} className="underline text-gray-600">
-            Se poengreglene i {game.tournamentName}
-          </Link>
-        </div>
-      )}
+      {/* Alltid i DOM-en, så aria-controls peker på noe også når forklaringen er lukket */}
+      <div id={explanationId} hidden={!open} className="basis-full rounded bg-gray-50 px-3 py-2 text-sm">
+        <p>
+          {lines.length === 0
+            ? "Ingen poeng i dette spillet."
+            : `${lines.map((l) => `${reasonLabels[l.reason]} ${l.points}`).join(" + ")} = ${total} poeng`}
+        </p>
+        <Link
+          href={`/tournaments/${game.tournamentSlug}`}
+          className="underline text-gray-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+        >
+          Se poengreglene i {game.tournamentName}
+        </Link>
+      </div>
     </li>
   );
 }
@@ -142,7 +151,10 @@ function TournamentSummary({ tournament }: { tournament: TournamentOption }) {
           </dd>
         </div>
       </dl>
-      <Link href={`/tournaments/${tournament.slug}`} className="text-sm underline text-gray-600">
+      <Link
+        href={`/tournaments/${tournament.slug}`}
+        className="text-sm underline text-gray-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+      >
         Se poengreglene
       </Link>
     </section>
@@ -198,7 +210,7 @@ export function GameHistory({
               <select
                 value={selected}
                 onChange={(e) => setSelected(e.target.value)}
-                className="border border-gray-300 rounded px-2 py-1"
+                className="min-h-11 border border-gray-300 rounded px-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
               >
                 <option value="">Alle</option>
                 {tournaments.map((t) => (
@@ -210,9 +222,10 @@ export function GameHistory({
             </label>
           )}
 
-          {shown.length > 0 && (
-            <span className="text-sm text-gray-600">{shown.length} spill</span>
-          )}
+          {/* Leses opp når filteret endres, så skjermleserbrukere hører at listen er byttet */}
+          <span aria-live="polite" className="text-sm text-gray-600">
+            {shown.length} spill
+          </span>
         </div>
       </div>
 

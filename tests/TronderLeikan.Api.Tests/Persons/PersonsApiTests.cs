@@ -170,4 +170,40 @@ public class PersonsApiTests(TronderLeikanApiFactory factory)
             .ToList();
         ids.Should().Contain(newId);
     }
+
+    // Gyldig PNG på 1×1 piksel
+    private static readonly byte[] TinyPng = Convert.FromBase64String(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==");
+
+    [Fact]
+    public async Task GET_bilde_returnerer_opplastet_bilde_som_webp()
+    {
+        var id = await (await _client.PostAsJsonAsync("/api/v1/persons",
+            new { firstName = "Bilde", lastName = "Testesen" })).Content.ReadFromJsonAsync<Guid>();
+        using var form = new MultipartFormDataContent();
+        var file = new ByteArrayContent(TinyPng);
+        file.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/png");
+        form.Add(file, "image", "bilde.png");
+        (await _client.PutAsync($"/api/v1/persons/{id}/image", form))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var response = await _client.GetAsync($"/api/v1/persons/{id}/image");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.Content.Headers.ContentType!.MediaType.Should().Be("image/webp");
+        (await response.Content.ReadAsByteArrayAsync()).Should().NotBeEmpty();
+    }
+
+    [Fact]
+    public async Task GET_bilde_for_person_uten_bilde_returnerer_404_problem_details()
+    {
+        var id = await (await _client.PostAsJsonAsync("/api/v1/persons",
+            new { firstName = "Uten", lastName = "Bilde" })).Content.ReadFromJsonAsync<Guid>();
+
+        var response = await _client.GetAsync($"/api/v1/persons/{id}/image");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        body.GetProperty("title").GetString().Should().Be("Person.ImageNotFound");
+    }
 }

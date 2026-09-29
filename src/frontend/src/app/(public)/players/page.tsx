@@ -10,18 +10,18 @@ type PersonSummaryResponse = {
   hasProfileImage: boolean;
 };
 
-// Henter alle spillere fra backend. Returnerer tomt array ved utilgjengelighet,
-// slik at siden alltid rendres — selv uten API-tilkobling under utvikling.
-async function getPersons(): Promise<PersonSummaryResponse[]> {
+// Henter alle spillere fra backend. Returnerer null ved feil, slik at siden kan skille
+// mellom «ingen spillere» og «klarte ikke å hente».
+async function getPersons(): Promise<PersonSummaryResponse[] | null> {
   try {
     const res = await fetch(
       `${process.env.API_BASE_URL ?? "http://localhost:5000"}/api/v1/persons`,
       { cache: "no-store" }
     );
-    if (!res.ok) return [];
+    if (!res.ok) return null;
     return res.json();
   } catch {
-    return [];
+    return null;
   }
 }
 
@@ -56,18 +56,19 @@ function InitialsAvatar({
   );
 }
 
-// Spillerkort — lenker til profil og viser profilbilde eller initialer
+// Spillerkort — lenker til profil og viser profilbilde eller initialer.
+// Bildet har tom alt, siden navnet står rett under og ellers ville blitt lest opp to ganger.
 function PlayerCard({ person }: { person: PersonSummaryResponse }) {
   return (
     <Link
       href={`/players/${person.id}`}
-      className="flex flex-col items-center gap-2 p-4 border border-gray-200 rounded hover:underline"
+      className="flex h-full flex-col items-center gap-2 p-4 border border-gray-200 rounded hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
     >
       {person.hasProfileImage ? (
         /* eslint-disable-next-line @next/next/no-img-element */
         <img
           src={`/api/v1/persons/${person.id}/image`}
-          alt={`${person.firstName} ${person.lastName}`}
+          alt=""
           width={64}
           height={64}
           className="w-16 h-16 rounded-full object-cover border border-gray-200"
@@ -76,7 +77,7 @@ function PlayerCard({ person }: { person: PersonSummaryResponse }) {
         <InitialsAvatar firstName={person.firstName} lastName={person.lastName} />
       )}
 
-      <p className="text-sm font-medium text-gray-900 text-center truncate w-full">
+      <p className="text-sm font-medium text-gray-900 text-center break-words w-full">
         {person.firstName} {person.lastName}
       </p>
     </Link>
@@ -97,7 +98,7 @@ export default async function PlayersPage() {
   const persons = await getPersons();
 
   // Sorter alfabetisk på etternavn, deretter fornavn
-  const sorted = persons
+  const sorted = (persons ?? [])
     .slice()
     .sort(
       (a, b) =>
@@ -114,14 +115,20 @@ export default async function PlayersPage() {
           : "Registrerte spillere i TrønderLeikan vises her."}
       </p>
 
-      {sorted.length === 0 ? (
+      {persons === null ? (
+        <p className="text-gray-500">
+          Klarte ikke å hente spillere. Prøv igjen senere.
+        </p>
+      ) : sorted.length === 0 ? (
         <EmptyState />
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        <ul className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
           {sorted.map((person) => (
-            <PlayerCard key={person.id} person={person} />
+            <li key={person.id}>
+              <PlayerCard person={person} />
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </div>
   );
