@@ -168,4 +168,44 @@ public class GameTests
 
         game.PlayedOn.Should().BeNull();
     }
+
+    [Fact]
+    public void HasPlayed_DeltakerOgSpillendeArrangørHarSpilt()
+    {
+        var deltaker = Guid.NewGuid();
+        var arrangør = Guid.NewGuid();
+        var game = Game.Create("Kubb", Guid.NewGuid());
+        game.AddParticipant(deltaker);
+        game.AddOrganizer(arrangør, withParticipation: true);
+
+        game.HasPlayed(deltaker).Should().BeTrue();
+        game.HasPlayed(arrangør).Should().BeTrue();
+    }
+
+    [Fact]
+    public void HasPlayed_ArrangørSomIkkeSpillerOgTilskuerHarIkkeSpilt()
+    {
+        var arrangør = Guid.NewGuid();
+        var tilskuer = Guid.NewGuid();
+        var game = Game.Create("Kubb", Guid.NewGuid());
+        game.AddOrganizer(arrangør, withParticipation: false);
+        game.AddSpectator(tilskuer);
+
+        game.HasPlayed(arrangør).Should().BeFalse();
+        game.HasPlayed(tilskuer).Should().BeFalse();
+    }
+
+    [Fact]
+    public void IsInvolved_EnhverRolleTeller_UtenforspillerTellerIkke()
+    {
+        var arrangør = Guid.NewGuid();
+        var tilskuer = Guid.NewGuid();
+        var game = Game.Create("Kubb", Guid.NewGuid());
+        game.AddOrganizer(arrangør, withParticipation: false);
+        game.AddSpectator(tilskuer);
+
+        game.IsInvolved(arrangør).Should().BeTrue();
+        game.IsInvolved(tilskuer).Should().BeTrue();
+        game.IsInvolved(Guid.NewGuid()).Should().BeFalse();
+    }
 }

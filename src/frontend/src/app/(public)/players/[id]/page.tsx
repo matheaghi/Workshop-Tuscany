@@ -163,6 +163,43 @@ function buildStory(
   return story;
 }
 
+// Viser deltaker- og seiersrekke som to små bokser ved siden av navnet — vises kun når det er noe å vise
+function StreakTiles({
+  currentParticipationStreak,
+  currentWinStreak,
+}: {
+  currentParticipationStreak: number;
+  currentWinStreak: number | null;
+}) {
+  const showParticipation = currentParticipationStreak > 0;
+  const showWin = currentWinStreak !== null;
+
+  if (!showParticipation && !showWin) return null;
+
+  return (
+    <div className="flex flex-wrap gap-4">
+      {showParticipation && (
+        <div className="border border-gray-200 rounded p-4">
+          <p className="text-sm text-gray-600">
+            <span aria-hidden="true">🔥</span> Deltakerrekke
+          </p>
+          <p className="text-lg font-semibold">{currentParticipationStreak} spill på rad</p>
+        </div>
+      )}
+      {showWin && (
+        <div className="border border-gray-200 rounded p-4">
+          <p className="text-sm text-gray-600">
+            <span aria-hidden="true">🏆</span> Seiersrekke
+          </p>
+          <p className="text-lg font-semibold">
+            {currentWinStreak} {currentWinStreak === 1 ? "seier" : "seire"} på rad
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Dynamisk metadata basert på spillerens navn — brukes av søkemotorer og sosiale medier
 export async function generateMetadata({
   params,
@@ -246,9 +283,19 @@ export default async function PlayerProfilePage({
           <InitialsAvatarLarge firstName={person.firstName} lastName={person.lastName} />
         )}
 
-        <h1 className="text-2xl font-semibold">
-          {person.firstName} {person.lastName}
-        </h1>
+        {/* Rekkene står ved siden av navnet, og brytes under på smale skjermer */}
+        <div className="flex flex-wrap items-center gap-4">
+          <h1 className="text-2xl font-semibold">
+            {person.firstName} {person.lastName}
+          </h1>
+
+          {history && (
+            <StreakTiles
+              currentParticipationStreak={history.currentParticipationStreak}
+              currentWinStreak={history.currentWinStreak}
+            />
+          )}
+        </div>
       </div>
 
       {/* Oppsummering og historikk utelates hvis historikken ikke kunne hentes */}

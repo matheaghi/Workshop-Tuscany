@@ -76,6 +76,20 @@ public sealed class Game : Entity
         AddDomainEvent(new GameCompletedEvent(Id));
     }
 
+    // Spilte: deltaker, eller arrangør når arrangørene spiller — samme regel som deltakerpoengene
+    public bool HasPlayed(Guid personId) =>
+        _participants.Contains(personId) ||
+        (IsOrganizersParticipating && _organizers.Contains(personId));
+
+    // Involvert: personen står i minst én av spillets lister, i hvilken som helst rolle
+    public bool IsInvolved(Guid personId) =>
+        _participants.Contains(personId) ||
+        _organizers.Contains(personId) ||
+        _spectators.Contains(personId) ||
+        _firstPlace.Contains(personId) ||
+        _secondPlace.Contains(personId) ||
+        _thirdPlace.Contains(personId);
+
     public void UpdateName(string name) => Name = name;
     public void SetBanner() => HasBanner = true;
     public void RemoveBanner() => HasBanner = false;

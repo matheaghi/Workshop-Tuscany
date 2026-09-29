@@ -42,6 +42,10 @@ export type PersonHistoryResponse = {
     organized: number;
     spectated: number;
   };
+  // Antall spill på rad personen har vært med i (uansett rolle), regnet fra det siste spillet totalt — 0 hvis ikke med i siste spill
+  currentParticipationStreak: number;
+  // Antall seire på rad, regnet fra det siste spillet totalt — null med mindre personen vant siste spill
+  currentWinStreak: number | null;
   // Sortert med eldste turnering først
   tournaments: {
     tournamentId: string;

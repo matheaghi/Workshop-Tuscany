@@ -41,3 +41,20 @@ Scoreboardet for en turnering summerer poengene fra alle ferdige spill og ranger
 Personer med lik poengsum deler plassering, og neste person hopper tilsvarende ned.
 Hver person har en historikk som viser hvilke spill de har vært med i, hvilken plassering de fikk og om de arrangerte.
 Historikken forklarer poengene: hvert spill viser hvilke poster summen består av, og hver turnering viser postene sammenlagt.
+
+## Rekorder
+
+Rekordene regnes over ferdige spill, enten i én turnering eller i alle spill.
+Flere personer kan dele en rekord; da vises alle.
+
+- En **seier** er førsteplass. Delt førsteplass er en seier for alle som deler den.
+- Å **spille** betyr å være deltaker, eller arrangør i et spill der arrangørene spiller. Tilskuere spiller ikke.
+- Å **være med** betyr å ha en hvilken som helst rolle i spillet: deltaker, arrangør eller tilskuer.
+- En **seiersrekke** er seire på rad. Ethvert spill personen ikke vant bryter rekken, også spill personen ikke var med i.
+- En **deltakerrekke** er spill på rad der personen var med. Et spill personen ikke var med i bryter rekken.
+- Rekker regnes i datorekkefølge, og spill samme dag sorteres etter navn. Spill uten dato er ikke med i rekkene, men teller for seire, spill spilt og tilskuer.
+- En **pågående** rekke er rekken som varer til og med siste spill. Bare vinneren av siste spill har en pågående seiersrekke.
+
+Rekordene er flest seire, lengst seiersrekke, mest lojale tilskuer (flest spill som tilskuer) og flest spill spilt.
+På tvers av alle spill vises også nåværende seiersrekke, lengst deltakerrekke og lengst pågående deltakerrekke.
+Hver person ser sin egen pågående deltakerrekke, og sin seiersrekke hvis de vant siste spill.

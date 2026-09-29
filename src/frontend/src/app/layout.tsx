@@ -15,6 +15,7 @@ export const metadata: Metadata = {
 const navLinks = [
   { href: "/", label: "Turneringer" },
   { href: "/players", label: "Spillere" },
+  { href: "/rekorder", label: "Rekorder" },
 ] as const;
 
 export default function RootLayout({

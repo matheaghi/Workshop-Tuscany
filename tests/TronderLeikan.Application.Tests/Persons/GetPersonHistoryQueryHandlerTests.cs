@@ -238,4 +238,34 @@ public sealed class GetPersonHistoryQueryHandlerTests
         Assert.Equal(13, turnering.TotalPoints);
         Assert.Equal(turnering.TotalPoints, turnering.PointsSummary.Sum(s => s.Points));
     }
+
+    [Fact]
+    public async Task GetPersonHistory_ViserPågåendeDeltakerrekkeOgSeiersrekke()
+    {
+        await using var db = TestAppDbContext.Create();
+        var kari = Person.Create("Kari", "Nordmann");
+        var ola = Person.Create("Ola", "Hansen");
+        var t = Tournament.Create("Lagtur", "lagtur");
+        var kubb = Spill(t, "Kubb", new DateOnly(2026, 6, 1));
+        kubb.AddParticipant(ola.Id);
+        kubb.AddSpectator(kari.Id);
+        kubb.Complete([ola.Id], [], []);
+        var dart = Spill(t, "Dart", new DateOnly(2026, 6, 2));
+        dart.AddParticipant(kari.Id);
+        dart.AddParticipant(ola.Id);
+        dart.Complete([kari.Id], [], []);
+        var boccia = Spill(t, "Boccia", new DateOnly(2026, 6, 3));   // Ola var ikke med
+        boccia.AddParticipant(kari.Id);
+        boccia.Complete([kari.Id], [], []);
+        db.AddRange(kari, ola, t, kubb, dart, boccia);
+        await db.SaveChangesAsync();
+
+        var kariHistorikk = await Historikk(db, kari.Id);
+        var olaHistorikk = await Historikk(db, ola.Id);
+
+        Assert.Equal(3, kariHistorikk.CurrentParticipationStreak);
+        Assert.Equal(2, kariHistorikk.CurrentWinStreak);
+        Assert.Equal(0, olaHistorikk.CurrentParticipationStreak);
+        Assert.Null(olaHistorikk.CurrentWinStreak);
+    }
 }

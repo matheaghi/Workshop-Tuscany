@@ -2,13 +2,17 @@ using TronderLeikan.Domain.Tournaments;
 
 namespace TronderLeikan.Application.Persons.Responses;
 
-// En persons historikk: alle ferdige spill de har vært med i, gruppert per turnering og sortert etter dato
+// En persons historikk: alle ferdige spill de har vært med i, gruppert per turnering og sortert etter dato.
+// Rekkene regnes over alle spill: deltakerrekken er 0 når personen ikke var med i siste spill,
+// og seiersrekken er null når personen ikke vant siste spill.
 public record PersonHistoryResponse(
     Guid PersonId,
     string FirstName,
     string LastName,
     RoleSummaryResponse RoleSummary,
-    IReadOnlyList<TournamentHistoryResponse> Tournaments);
+    IReadOnlyList<TournamentHistoryResponse> Tournaments,
+    int CurrentParticipationStreak,
+    int? CurrentWinStreak);
 
 // Antall spill personen har hatt hver rolle i. Arrangør som spiller teller både som deltaker og arrangør.
 public record RoleSummaryResponse(int Participated, int Organized, int Spectated);

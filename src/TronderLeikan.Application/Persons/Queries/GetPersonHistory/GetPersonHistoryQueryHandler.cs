@@ -21,7 +21,7 @@ public sealed class GetPersonHistoryQueryHandler(IAppDbContext db)
         var doneGames = await db.Games.Where(g => g.IsDone).ToListAsync(ct);
 
         var tournamentIds = doneGames
-            .Where(g => IsInvolved(g, person.Id))
+            .Where(g => g.IsInvolved(person.Id))
             .Select(g => g.TournamentId)
             .Distinct()
             .ToList();
@@ -43,7 +43,12 @@ public sealed class GetPersonHistoryQueryHandler(IAppDbContext db)
             Organized: allGames.Count(g => g.Roles.Contains(GameRole.Organizer)),
             Spectated: allGames.Count(g => g.Roles.Contains(GameRole.Spectator)));
 
-        return new PersonHistoryResponse(person.Id, person.FirstName, person.LastName, roleSummary, history);
+        var winStreak = Records.CurrentWinStreak(doneGames, person.Id);
+
+        return new PersonHistoryResponse(
+            person.Id, person.FirstName, person.LastName, roleSummary, history,
+            Records.CurrentParticipationStreak(doneGames, person.Id),
+            winStreak > 0 ? winStreak : null);
     }
 
     private static TournamentHistoryResponse ToTournamentHistory(Tournament tournament, List<Game> games, Guid personId)
@@ -54,7 +59,7 @@ public sealed class GetPersonHistoryQueryHandler(IAppDbContext db)
         var dates = games.Where(g => g.PlayedOn is not null).Select(g => g.PlayedOn!.Value).ToList();
 
         var personGames = games
-            .Where(g => IsInvolved(g, personId))
+            .Where(g => g.IsInvolved(personId))
             .OrderBy(g => g.PlayedOn is null)
             .ThenBy(g => g.PlayedOn)
             .ThenBy(g => g.Name)
@@ -82,7 +87,7 @@ public sealed class GetPersonHistoryQueryHandler(IAppDbContext db)
 
         // Arrangør som spiller regnes også som deltaker, slik poengreglene gjør
         var roles = new List<GameRole>();
-        if (game.Participants.Contains(personId) || (isOrganizer && game.IsOrganizersParticipating))
+        if (game.HasPlayed(personId))
             roles.Add(GameRole.Participant);
         if (isOrganizer)
             roles.Add(GameRole.Organizer);
@@ -103,13 +108,4 @@ public sealed class GetPersonHistoryQueryHandler(IAppDbContext db)
             game.Id, game.Name, game.PlayedOn, roles, placement,
             new GamePointsResponse(points.Participation, points.Placement, points.Organizing, points.Spectating, points.Total, lines));
     }
-
-    // Samme utvalg som scoreboardet: personen står i minst én av spillets lister
-    private static bool IsInvolved(Game game, Guid personId) =>
-        game.Participants.Contains(personId) ||
-        game.Organizers.Contains(personId) ||
-        game.Spectators.Contains(personId) ||
-        game.FirstPlace.Contains(personId) ||
-        game.SecondPlace.Contains(personId) ||
-        game.ThirdPlace.Contains(personId);
 }

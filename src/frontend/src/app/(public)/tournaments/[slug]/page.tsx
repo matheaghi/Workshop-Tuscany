@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { RecordList, type RecordResponse } from "@/components/RecordList";
 
 // Datamodell for turneringsdetaljer — tilsvarer API-respons fra /api/v1/tournaments/:slug
 type TournamentDetailResponse = {
@@ -56,6 +57,30 @@ async function getScoreboard(
     return res.json();
   } catch {
     return [];
+  }
+}
+
+// Datamodell for rekorder i turneringen — tilsvarer API-respons fra /api/v1/tournaments/:id/records
+type TournamentRecordsResponse = {
+  mostWins: RecordResponse;
+  longestWinStreak: RecordResponse;
+  mostSpectated: RecordResponse;
+  mostGamesPlayed: RecordResponse;
+};
+
+// Henter rekorder for en gitt turnering. Returnerer null ved feil.
+async function getTournamentRecords(
+  id: string
+): Promise<TournamentRecordsResponse | null> {
+  try {
+    const res = await fetch(
+      `${process.env.API_BASE_URL ?? "http://localhost:5000"}/api/v1/tournaments/${id}/records`,
+      { cache: "no-store" }
+    );
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
   }
 }
 
@@ -122,8 +147,11 @@ export default async function TournamentDetailPage({
   const tournament = await getTournamentBySlug(slug);
   if (!tournament) notFound();
 
-  // Hent scoreboard parallelt med at turnerings-data allerede er tilgjengelig
-  const scoreboard = await getScoreboard(tournament.id);
+  // Hent scoreboard og rekorder parallelt med at turnerings-data allerede er tilgjengelig
+  const [scoreboard, records] = await Promise.all([
+    getScoreboard(tournament.id),
+    getTournamentRecords(tournament.id),
+  ]);
 
   const { pointRules } = tournament;
 
@@ -215,6 +243,23 @@ export default async function TournamentDetailPage({
           )}
         </section>
       </div>
+
+      {records && (
+        <section aria-labelledby="records-heading" className="mt-8">
+          <h2 id="records-heading" className="text-lg font-semibold mb-2">
+            Rekorder
+          </h2>
+
+          <RecordList
+            records={[
+              { key: "mostWins", record: records.mostWins },
+              { key: "longestWinStreak", record: records.longestWinStreak },
+              { key: "mostSpectated", record: records.mostSpectated },
+              { key: "mostGamesPlayed", record: records.mostGamesPlayed },
+            ]}
+          />
+        </section>
+      )}
     </div>
   );
 }

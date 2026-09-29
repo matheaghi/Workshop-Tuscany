@@ -3,6 +3,8 @@ using TronderLeikan.API.Common;
 using TronderLeikan.Application.Common.Interfaces;
 using TronderLeikan.Application.Games.Queries.GetGamesByTournament;
 using TronderLeikan.Application.Games.Responses;
+using TronderLeikan.Application.Statistics.Queries.GetTournamentRecords;
+using TronderLeikan.Application.Statistics.Responses;
 using TronderLeikan.Application.Tournaments.Commands.CreateTournament;
 using TronderLeikan.Application.Tournaments.Commands.UpdateTournamentPointRules;
 using TronderLeikan.Application.Tournaments.Queries.GetScoreboard;
@@ -46,4 +48,8 @@ public sealed class TournamentsController(ISender sender) : ApiControllerBase
     [HttpGet("{id:guid}/scoreboard")]
     public async Task<ActionResult<ScoreboardEntryResponse[]>> GetScoreboard(Guid id, CancellationToken ct) =>
         (await sender.Query(new GetScoreboardQuery(id), ct)).Match(Ok, Problem);
+
+    [HttpGet("{id:guid}/records")]
+    public async Task<ActionResult<TournamentRecordsResponse>> GetRecords(Guid id, CancellationToken ct) =>
+        (await sender.Query(new GetTournamentRecordsQuery(id), ct)).Match(Ok, Problem);
 }
