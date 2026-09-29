@@ -61,7 +61,7 @@ Som arrangør vil jeg bli stoppet hvis jeg registrerer noe som ikke gir mening: 
 Jeg vil kunne rette feilen med det samme uten å begynne på nytt.
 Uavgjort skal fortsatt være lov, det er ikke en feil.
 
-### 11. Når ble det spilt?
+### [CLOSED] 11. Når ble det spilt?
 Som administrator vil jeg kunne registrere når et spill ble spilt, slik at vi ser sesongen utfolde seg fra første til siste kveld.
 Jeg vil kunne huske hvilken tur eller fredagspils et spill hørte til.
 
@@ -123,7 +123,7 @@ Jeg skal ikke måtte be noen andre gjøre det for meg fordi appen ikke fungerer 
 Som tilskuer i lokalet vil jeg se scoreboardet på storskjermen uten menyer og støy, lesbart fra andre siden av bordet, uten at noen må sitte og styre det.
 Når et spill blir ferdig, skal stillingen oppdatere seg selv, og hele rommet skal merke det når noen tar ledelsen.
 
-### 25. Rekorder og streaks
+### [CLOSED] 25. Rekorder og streaks
 Som lagmedlem vil jeg se morsom statistikk: flest seire, lengst seiersrekke, flest ganger på sisteplass, mest lojale tilskuer.
 
 ### 26. Utslagsturnering
