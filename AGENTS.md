@@ -3,16 +3,10 @@
 Trønder Leikan: internal tournament/scoring platform. Domain rules (point rules, scoreboard ties) are in `docs/TRONDER_LEIKAN.md`; user stories in `docs/backlog.md`. Docs, comments and error messages are written in Norwegian — keep new ones in Norwegian.
 
 ## Communication
-- Always respond in English, even if the codebase, docs, or backlog contain Norwegian text.
 - When asking me questions, ask ONE question at a time and wait for my answer before asking the next.
 
-## Development workflow
-- Implement backend features test-first. Write a failing test in the test project, run it to confirm it fails, then implement and re-run.
-- Build features in thin vertical slices (domain → endpoint → frontend) and verify each slice before moving on.
-
-## Scope & assumptions
+## Scope
 - Implement the simplest solution that meets the story. Don't add extras such as URL state, persistence, or config options unless I ask for them.
-- When I ask for a NEW backlog item, don't re-analyze the previous story. Go straight to listing candidate tasks.
 
 ## Commands
 
