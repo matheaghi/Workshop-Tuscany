@@ -18,7 +18,7 @@ Spør hvis noe er uklart, men jeg er på ferie.
 
 ## Rettferdighet og poeng
 
-### 1. Hvorfor fikk jeg disse poengene?
+### [CLOSED] 1. Hvorfor fikk jeg disse poengene?
 Som deltaker vil jeg forstå hvor poengene mine kommer fra, både i hvert spill og sammenlagt, slik at jeg skjønner hvorfor jeg fikk 4 poeng og ikke 6.
 Det skal være forståelig for en som aldri har vært med før.
 
@@ -70,7 +70,7 @@ Som turneringsansvarlig vil jeg kunne avslutte en turnering slik at den fryses o
 Vinneren skal kåres ordentlig på skjermen, slik at det føles som en skikkelig seier og ikke en rad i en tabell.
 Etterpå skal turneringen vises som historisk.
 
-### 13. Min historikk
+### [CLOSED] 13. Min historikk
 Som deltaker vil jeg se alt jeg har vært med på over tid: plasseringer, hvordan poengene har utviklet seg fra turnering til turnering, og om jeg stort sett deltar, arrangerer eller ser på.
 Jeg vil kjenne meg igjen i historien om meg, ikke bare se en lang liste med tall.
 Det skal være like meningsfullt for noen med to spill som for noen med to sesonger bak seg.
